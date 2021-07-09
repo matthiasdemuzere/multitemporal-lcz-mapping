@@ -1,0 +1,150 @@
+ # LOCAL FILES AND FOLDERS
+TA_DIR: '/home/demuzmp4/Nextcloud/data/wudapt/dynamic-lcz-china/input'
+TA_SHP: '/home/demuzmp4/Nextcloud/data/wudapt/dynamic-lcz-china/input/cai_zhi_all.shp'
+OUT_DIR: '/home/demuzmp4/Nextcloud/data/wudapt/dynamic-lcz-china/output'
+FIG_DIR: '/home/demuzmp4/Nextcloud/data/wudapt/dynamic-lcz-china/figs'
+GF_FOLDER: 'EE'
+
+# EE dir for training areas
+EE_TA_DIR: 'projects/WUDAPT/LCZ_L0/China/ta'
+# EE dir for earth observation input
+EE_IN_DIR: 'projects/WUDAPT/LCZ_L0/China/input'
+# EE dir for LCZ output
+EE_OUT_DIR: 'projects/WUDAPT/LCZ_L0/China/output'
+#EE_ACCOUNT script
+EE_SET_ACCOUNT: "/home/demuzmp4/Nextcloud/scripts/tools/set_ee_account.sh"
+
+# Image collection settings
+CC: 70
+EXTRA_DAYS: 180
+
+# LCZ mapping parameters
+lcz:
+  ROIBUFFER: 15000
+  SCALE: 30
+  POLYSIZE: 300000
+  NRLCZ: 17
+  RFNRTREES: 30
+  NRBOOT: 25
+  BOOTTRESH: 0.7
+  BUFFERSIZE: 300
+  BANDS: [ "blue", "green", "red", "nir", "swir1", "swir2", "tirs1",
+           "bci", "ndbai", "ndwi_max", "ndvi_min", "ndvi_max", "slope" ]
+  BANDS_FLY: ['blue', 'green', 'red', 'nir', 'swir1', 'tirs1', 'swir2']
+  COLORS: [
+      '#8C0000', '#D10000', '#FF0000', '#BF4D00',
+      '#FF6600', '#FF9955', '#FAEE05', '#BCBCBC',
+      '#FFCCAA', '#555555', '#006A00', '#00AA00',
+      '#648525', '#B9DB79', '#000000', '#FBF7AE',
+      '#6A6AFF',
+  ]
+
+# Other
+CM_WEIGHTS: '/home/demuzmp4/Nextcloud/scripts/wudapt/LCZ_Generator/backend/data/LCZ_metric.csv'
+
+#IDs Cai
+Beijing:
+  2000:
+    L5: [
+      'LT05_123032_20000321',
+      'LT05_123032_20000508',
+      'LT05_123032_20000524',
+      'LT05_123032_20000913',
+      'LT05_123032_20001031']
+    L7: [
+      'LE07_123032_20000430',
+      'LE07_123032_20000516',
+      'LE07_123032_20000820']
+  2005:
+    L5: [
+      'LT05_123032_20050506',
+      'LT05_123032_20050522',
+      'LT05_123032_20050623',
+      'LT05_123032_20050725',
+      'LT05_123032_20051114' ]
+  2010:
+    L5: [
+      'LT05_123032_20100213',
+      'LT05_123032_20100317',
+      'LT05_123032_20100520',
+      'LT05_123032_20100605',
+      'LT05_123032_20100808',
+      'LT05_123032_20101214']
+  2015:
+    L8: [
+      'LC08_123032_20150416',
+      'LC08_123032_20150502',
+      'LC08_123032_20150518',
+      'LC08_123032_20150822',
+      'LC08_123032_20150907']
+  2020:
+    L8: [
+      'LC08_123032_20200429',
+      'LC08_123032_20200803',
+      'LC08_123032_20200920',
+      'LC08_123032_20201006']
+
+Shanghai:
+  2000:
+    L7: [
+      'LE07_118038_20000326',
+      'LE07_118038_20000427',
+      'LE07_118038_20000918']
+  2005:
+    L5: [
+      'LT05_118038_20051127',
+      'LT05_118038_20060303',
+      'LT05_118038_20060420']
+  2010:
+    L5: [
+      'LT05_118038_20091021',
+      'LT05_118038_20100125',
+      'LT05_118038_20100501',
+      'LT05_118038_20101109',
+      'LT05_118038_20110317']
+  2015:
+    L8: [
+      'LC08_118038_20150123',
+      'LC08_118038_20150126',
+      'LC08_118038_20150312',
+      'LC08_118038_20150803',
+      'LC08_118038_20151222']
+  2020:
+    L8: [
+      'LC08_118038_20200121',
+      'LC08_118038_20200222',
+      'LC08_118038_20200512',
+      'LC08_118038_20200816']
+
+Guangzhou:
+  2000:
+    L7: [
+      'LE07_122044_20000102',
+      'LE07_122044_20000914',
+      'LE07_122044_20001101']
+  2005:
+    L5: [
+      'LT05_122044_20041019',
+      'LT05_122044_20041104',
+      'LT05_122044_20041120',
+      'LT05_122044_20050718',
+      'LT05_122044_20051022',
+      'LT05_122044_20051123']
+  2010:
+    L5: [
+      'LT05_122044_20091017',
+      'LT05_122044_20091102',
+      'LT05_122044_20100326',
+      'LT05_122044_20110601']
+  2015:
+    L8: [
+      'LC08_122044_20150103',
+      'LC08_122044_20150119',
+      'LC08_122044_20151018']
+  2020:
+    L8: [
+      'LC08_122044_20191029',
+      'LC08_122044_20191114',
+      'LC08_122044_20200218',
+      'LC08_122044_20201202',
+      'LC08_122044_20210103']
