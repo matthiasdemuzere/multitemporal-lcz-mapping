@@ -9,20 +9,64 @@ fiona.drvsupport.supported_drivers['kml'] = 'rw' # enable KML support which is d
 fiona.drvsupport.supported_drivers['KML'] = 'rw' # enable KML support which is disabled by default
 import geopandas as gpd
 import numpy as np
+import traceback
+import argparse
+from argparse import RawTextHelpFormatter
 
-def main():
+
+parser = argparse.ArgumentParser(
+    description="PURPOSE: Prepare TA set that contains TAs for all cities\n \n"
+                "OUTPUT:\n"
+                "- PUT HERE ...",
+    formatter_class=RawTextHelpFormatter
+)
+
+# Required arguments
+parser.add_argument(type=str, dest='CITY',
+                    help='City to classify',
+                    )
+parser.add_argument(type=str, dest='EE_ACCOUNT',
+                    help="Which EE account to use?",
+                    )
+args = parser.parse_args()
+
+# Arguments to script
+CITY       = args.CITY
+EE_ACCOUNT = args.EE_ACCOUNT
+
+# For testing
+CITY       = 'Hyderabad'
+EE_ACCOUNT = 'mdemuzere'
+
+# Set files and folders:
+fn_loc_dir = f"/home/demuzmp4/Nextcloud/data/wudapt/dynamic-lcz/{CITY}"
+fn_ee_dir  = f"projects/WUDAPT/LCZ_L0/dynamic-lcz/{CITY}"
+fn_ee_acc  = "/home/demuzmp4/Nextcloud/scripts/tools/set_ee_account.sh"
+
+print("> Setting requested EE acount first ...")
+os.system(f"bash {fn_ee_acc} {EE_ACCOUNT}")
+
+print("> Create EE folder if it does not already exists ...")
+try:
+    os.system(f"earthengine create folder {fn_ee_dir}")
+except Exception:
+    err = traceback.format_exc()
+    print(f"WARNING, unable to create EE folder: \n {err}")
+    pass
+
+def main(CITY):
 
     # Set the info
     info = _read_config()
 
     # Convert all kmz/kml and merge into one shape
-    kml2shp(info)
+    kml2shp(info, CITY)
 
 
 def _read_config() -> Dict[str, Dict[str, Any]]:
     with open(
         os.path.join(
-            '/home/demuzmp4/Nextcloud/scripts/wudapt/dynamic-lcz-china',
+            '/home/demuzmp4/Nextcloud/scripts/wudapt/dynamic-lcz',
             'param_config.yaml',
         ),
     ) as ymlfile:

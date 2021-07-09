@@ -1,0 +1,16 @@
+name: dynamic-lcz
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.8
+  - bokeh
+  - geopandas
+  - earthengine-api
+  - xarray
+  - netcdf4
+  - dask
+  - bottleneck
+  - rasterio
+  - matplotlib
+prefix: /home/demuzmp4/miniconda3/envs/dynamic-lcz

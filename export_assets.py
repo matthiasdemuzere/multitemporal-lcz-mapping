@@ -208,14 +208,14 @@ def export_all_ls(info, city, year):
 ##### __main__  scope
 ###############################################################################
 
-cities = ['Beijing']
-
-if __name__ == "__main__":
-
-    for year in list(np.arange(2000,2021,5)):
-
-        for city in cities:
-
-            main(year, city)
+# cities = ['Beijing']
+#
+# if __name__ == "__main__":
+#
+#     for year in list(np.arange(2000,2021,5)):
+#
+#         for city in cities:
+#
+#             main(year, city)
 
 ###############################################################################
