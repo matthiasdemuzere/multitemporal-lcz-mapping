@@ -12,6 +12,7 @@ import numpy as np
 import traceback
 import argparse
 from argparse import RawTextHelpFormatter
+import zipfile
 
 
 parser = argparse.ArgumentParser(
@@ -35,8 +36,8 @@ CITY       = args.CITY
 EE_ACCOUNT = args.EE_ACCOUNT
 
 # For testing
-CITY       = 'Hyderabad'
-EE_ACCOUNT = 'mdemuzere'
+#CITY       = 'Hyderabad'
+#EE_ACCOUNT = 'mdemuzere'
 
 # Set files and folders:
 fn_loc_dir = f"/home/demuzmp4/Nextcloud/data/wudapt/dynamic-lcz/{CITY}"
@@ -54,20 +55,13 @@ except Exception:
     print(f"WARNING, unable to create EE folder: \n {err}")
     pass
 
-def main(CITY):
+# ************** HELPER FUNCTIONS ***********************
 
-    # Set the info
-    info = _read_config()
-
-    # Convert all kmz/kml and merge into one shape
-    kml2shp(info, CITY)
-
-
-def _read_config() -> Dict[str, Dict[str, Any]]:
+def _read_config(CITY) -> Dict[str, Dict[str, Any]]:
     with open(
         os.path.join(
-            '/home/demuzmp4/Nextcloud/scripts/wudapt/dynamic-lcz',
-            'param_config.yaml',
+            '/home/demuzmp4/Nextcloud/scripts/wudapt/dynamic-lcz/config',
+            f'{CITY.lower()}.yaml',
         ),
     ) as ymlfile:
         pm = yaml.load(ymlfile, Loader=yaml.FullLoader)
@@ -105,7 +99,7 @@ def _fix_lczFolders(lczFolders: list,
                 list(lczDict[2].keys()):
             lczFoldersFixed.append(i)
         else:
-            print('problem')
+            print(f'Skipping folder {i}')
 
     return lczFoldersFixed
 
@@ -259,58 +253,51 @@ def _add_geometry(df):
 
     return df
 
-def kml2shp(info):
+# *************** Launch the process ********************
+# Set the info
+info = _read_config(CITY)
 
-    years = np.arange(2000,2021,5)
+# Initialize dataframe
+df_all = gpd.GeoDataFrame()
 
-    city_dict = {
-        'Beijing':'BJ',
-        'Guangzhou': 'gz',
-        'Shanghai': 'SH',
-    }
+# Loop TA years
+for year in list(info['TA'].keys()):
 
-    # Initialize dataframe
-    df_all = gpd.GeoDataFrame()
+    print(f"Processing {year}")
 
-    # Loop over cities
-    for city in city_dict.keys():
+    ## Read and process TAs for one city, all years
+    ifile = os.path.join(
+        fn_loc_dir,
+        info['TA'][year]
+    )
 
-        # Loop over years
-        for year in years:
+    df = _check_clean_ta(ifile)
 
-            print(f"Processing {year} for {city}")
+    # Add geometry
+    df = _add_geometry(df)
 
-            ## Read and process TAs for one city, all years
-            ifile = os.path.join(
-                info['TA_DIR'],
-                city,
-                f"{city_dict[city]}{year}.kmz"
-            )
+    # Add additional data
+    df['Author'] = info['AUTHOR']
+    df['City'] = CITY
+    df['Year'] = year
 
-            df = _check_clean_ta(ifile)
+    df_all = df_all.append(df)
 
-            # Add geometry
-            df = _add_geometry(df)
+df_all['Class'] = [int(i) for i in df_all.Class]
 
-            # Add additional data
-            df['Author'] = 'Cai Zhi'
-            df['City'] = city
-            df['Year'] = year
+SHP_FILE = os.path.join(
+        fn_loc_dir,
+        'TA.shp'
+    )
+df_all.to_file(SHP_FILE, driver='ESRI Shapefile')
 
-            df_all = df_all.append(df)
+# Zip to shp for upload
+shp_file_base = SHP_FILE.replace('.shp','')
+shp_list = [f"{shp_file_base}.{i}" for i in ['cpg','dbf','shp','shx']]
+zip_out = SHP_FILE.replace('.shp','.zip')
+with zipfile.ZipFile(zip_out, 'w') as zipMe:
+    for file in shp_list:
+        zipMe.write(file, compress_type=zipfile.ZIP_DEFLATED)
 
-    df_all['Class'] = [int(i) for i in df_all.Class]
-
-    df_all.to_file(info['TA_SHP'], driver='ESRI Shapefile')
-
-    print(f"Shapefile available here: {info['TA_SHP']}")
-
-###############################################################################
-##### __main__  scope
-###############################################################################
-
-if __name__ == "__main__":
-
-        main()
-
-###############################################################################
+print(" ++++++++++++++  IMPORTANT ++++++++++++++++")
+print(f" --> Manually upload SHP ZIP to EE: {zip_out}")

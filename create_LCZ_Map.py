@@ -6,25 +6,61 @@ import os
 import ee
 ee.Initialize()
 from datetime import datetime
+import traceback
+import argparse
+from argparse import RawTextHelpFormatter
 
+parser = argparse.ArgumentParser(
+    description="PURPOSE: Prepare TA set that contains TAs for all cities\n \n"
+                "OUTPUT:\n"
+                "- PUT HERE ...",
+    formatter_class=RawTextHelpFormatter
+)
 
-def _read_config() -> Dict[str, Dict[str, Any]]:
+# Required arguments
+parser.add_argument(type=str, dest='CITY',
+                    help='City to classify',
+                    )
+parser.add_argument(type=str, dest='EE_ACCOUNT',
+                    help="Which EE account to use?",
+                    )
+args = parser.parse_args()
+
+# Arguments to script
+CITY       = args.CITY
+EE_ACCOUNT = args.EE_ACCOUNT
+
+# For testing
+#CITY       = 'Hyderabad'
+#EE_ACCOUNT = 'mdemuzere'
+
+# Set files and folders:
+fn_loc_dir = f"/home/demuzmp4/Nextcloud/data/wudapt/dynamic-lcz/{CITY}"
+fn_ee_dir  = f"projects/WUDAPT/LCZ_L0/dynamic-lcz/{CITY}"
+fn_ee_acc  = "/home/demuzmp4/Nextcloud/scripts/tools/set_ee_account.sh"
+
+print("> Setting requested EE acount first ...")
+os.system(f"bash {fn_ee_acc} {EE_ACCOUNT}")
+
+# ************** HELPER FUNCTIONS ***********************
+
+def _read_config(CITY) -> Dict[str, Dict[str, Any]]:
     with open(
         os.path.join(
-            '/home/demuzmp4/Nextcloud/scripts/wudapt/dynamic-lcz-china',
-            'param_config.yaml',
+            '/home/demuzmp4/Nextcloud/scripts/wudapt/dynamic-lcz/config',
+            f'{CITY.lower()}.yaml',
         ),
     ) as ymlfile:
         pm = yaml.load(ymlfile, Loader=yaml.FullLoader)
     return pm
 
+info = _read_config(CITY)
 
-def _get_roi(info, city):
+def _get_roi(info):
     roi = ee.FeatureCollection(os.path.join(
-        info['EE_TA_DIR'],
-        "cai_zhi_all"))\
-        .filter(ee.Filter.eq("City",city)) \
-        .geometry().bounds().buffer(info['lcz']['ROIBUFFER']).bounds()
+        fn_ee_dir,
+        "TA"))\
+        .geometry().bounds().buffer(info['LCZ']['ROIBUFFER']).bounds()
     return roi
 
 def _mask_clouds(img):
@@ -44,26 +80,6 @@ def _mask_clouds(img):
   return img.updateMask(mask).divide(10000)\
       .copyProperties(img, img.propertyNames())
 
-
-# Set path row info per city
-def _get_pathrow_dict():
-    idict = {
-        'Beijing': {'PATH': 123,
-                    'ROW': 32,
-                    'S_DOY': 60,
-                    'E_DOY': 335},
-        'Shanghai': {'PATH': 118,
-                     'ROW': 38,
-                     'S_DOY': 60,
-                     'E_DOY': 335},
-        'Guangzhou': {'PATH': 122,
-                      'ROW': 44,
-                      'S_DOY': 0,
-                      'E_DOY': 366},
-    }
-
-    return idict
-
 ## Band names depending on sensor
 def _l8rename(img):
     return img.select(['B2', 'B3', 'B4', 'B5', 'B6',
@@ -77,141 +93,152 @@ def _l5_7rename(img):
                       ['blue', 'green', 'red', 'nir', 'swir1', 'tirs1',
                        'swir2', 'pixel_qa'])
 
-def _get_all_lst_list(info, city, year):
+def _add_bci(img):
 
-    # Define the collections
-    _ls5 = ee.ImageCollection('LANDSAT/LT05/C01/T1_SR')
-    _ls7 = ee.ImageCollection('LANDSAT/LE07/C01/T1_SR')
-    _ls8 = ee.ImageCollection('LANDSAT/LC08/C01/T1_SR')
+    b = img.select(['blue', 'green', 'red', 'nir', 'swir1', 'swir2']).divide(10000);
 
-    if year == 2000:
-        if city == 'Beijing':
-            l5 = _ls5.filter(ee.Filter.inList("system:index", info[city][year]['L5']))
-            l7 = _ls7.filter(ee.Filter.inList("system:index", info[city][year]['L7']))
-            ls_all = l5.merge(l7).map(_l5_7rename)
-        else:
-            l7 = _ls7.filter(ee.Filter.inList("system:index", info[city][year]['L7']))
-            ls_all = l7.map(_l5_7rename)
-    elif year in [2005, 2010]:
-        l5 = _ls5.filter(ee.Filter.inList("system:index", info[city][year]['L5']))
-        ls_all = l5.map(_l5_7rename)
-    else:
-        l8 = _ls8.filter(ee.Filter.inList("system:index", info[city][year]['L8']))
-        ls_all = l8.map(_l8rename)
+    ## Coefficients from Table S1 in De Vries et al., 2016
+    brightness_= ee.Image([0.2043, 0.4158, 0.5524, 0.5741, 0.3124, 0.2303]);
+    greenness_= ee.Image([-0.1603, 0.2819, -0.4934, 0.7940, -0.0002, -0.1446]);
+    wetness_= ee.Image([0.0315, 0.2021, 0.3102, 0.1594, -0.6806, -0.6109]);
+    sum = ee.call("Reducer.sum");
 
-    # print("Mask the clouds and select bands")
-    # ls_all = ls_all.map(_mask_clouds) \
-    #     .select(info['lcz']['BANDS_FLY'])
-    print("Clouds are NOT masked, bands are selected")
-    ls_all = ls_all.select(info['lcz']['BANDS_FLY'])
-    print(ls_all.size().getInfo())
+    brightness = b.multiply(brightness_).reduce(sum).rename('br');
+    greenness = b.multiply(greenness_).reduce(sum).rename('gr');
+    wetness = b.multiply(wetness_).reduce(sum).rename('we');
 
-    print("Convert to image for LCZ mapping")
-    # .toBands uses img ID in name, making it useless for RF
-    def coll_to_img(img,previous):
-        return ee.Image(previous).addBands(img)
+    combined_ = ee.Image(brightness).addBands(greenness).addBands(wetness);
 
-    first = ee.Image(ls_all.first()).select([])
-    ls_all_img = ee.Image(ls_all.iterate(coll_to_img, first))
+    ## Calculate BCI (Deng & Wu, 2012)
+    bci_ = (brightness.add(wetness)).divide(ee.Image(2));
+    bci = (bci_.subtract(greenness)).divide((bci_.add(greenness))).rename('bci').toFloat();
 
-    # Work with mosaic. FAILS
-    #ls_all_img = ee.Image(ls_all.mosaic())
+    combined = combined_.addBands(bci);
+    return img.addBands(combined);
 
-    return ls_all_img
+## Function to calculate other bands ratios
+def _add_ratios(img):
 
+  ndbai = img.normalizedDifference(['swir1','tirs1']).rename('ndbai')
+  ndbi = img.normalizedDifference(['swir1','nir']).rename('ndbi')
+  ebbi = (img.select('swir1').subtract(img.select('nir')))\
+               .divide(ee.Image(10).multiply((img.select('swir1').add(img.select('tirs1'))).sqrt()))\
+               .rename('ebbi').toFloat()
+  ndvi = img.normalizedDifference(['nir','red']).rename('ndvi')
+  ndwi = img.normalizedDifference(['green','nir']).rename('ndwi')
 
-def _get_all_ls(city, year, CLOUD_COVER, EXTRA_DAYS, ADD_L7):
+  return img\
+            .addBands(ndbai) \
+            .addBands(ndbi) \
+            .addBands(ebbi) \
+            .addBands(ndvi)\
+            .addBands(ndwi)\
+            .toFloat()
+
+def _get_all_ls(info, CITY, YEAR):
 
     print("Gathering the appropriate Landsat images ...")
 
     # Get the roi
-    roi = _get_roi(info, city)
+    roi = _get_roi(info)
 
     # Sample 0.5 year before / after year of interest
-    start_date = ee.Date(str(year) + '-01-01')
-    end_date   = ee.Date(str(year) + '-12-31')
+    start_date = ee.Date(str(YEAR) + '-01-01')
+    end_date   = ee.Date(str(YEAR) + '-12-31')
 
-    idict = _get_pathrow_dict()
+    # Get Landsat collections
+    _ls5 = ee.ImageCollection('LANDSAT/LT05/C01/T1_SR')
+    _ls7 = ee.ImageCollection('LANDSAT/LE07/C01/T1_SR')\
+            .filterDate('1999-01-01','2002-12-31') # Avoid scan line error
+    _ls8 = ee.ImageCollection('LANDSAT/LC08/C01/T1_SR')
 
-    _ls8 = ee.ImageCollection('LANDSAT/LC08/C01/T1_SR') \
-                .filterDate(start_date.advance(-EXTRA_DAYS,"days"),
-                            end_date.advance(EXTRA_DAYS,"days")) \
-                .filterBounds(roi) \
-                .filterMetadata('CLOUD_COVER', 'not_greater_than', CLOUD_COVER) \
-                .filterMetadata('WRS_PATH', 'equals', idict[city]['PATH']) \
-                .filterMetadata('WRS_ROW', 'equals', idict[city]['ROW']) \
-                .filter(ee.Filter.dayOfYear(idict[city]['S_DOY'], idict[city]['E_DOY'])) \
-                .map(_l8rename)
-    _ls5 = ee.ImageCollection('LANDSAT/LT05/C01/T1_SR')\
-                .filterDate(start_date.advance(-EXTRA_DAYS,"days"),
-                            end_date.advance(EXTRA_DAYS,"days")) \
-                .filterBounds(roi) \
-                .filterMetadata('CLOUD_COVER', 'not_greater_than', CLOUD_COVER) \
-                .filterMetadata('WRS_PATH', 'equals', idict[city]['PATH']) \
-                .filterMetadata('WRS_ROW', 'equals', idict[city]['ROW']) \
-                .filter(ee.Filter.dayOfYear(idict[city]['S_DOY'], idict[city]['E_DOY'])) \
-                .map(_l5_7rename)
+    # Merge collections
+    l5 = _ls5.map(_l5_7rename)
+    l7 = _ls7.map(_l5_7rename)
+    l8 = _ls8.map(_l8rename)
+    _ls_all = l5.merge(l7).merge(l8)
 
-    if year < 2003 and ADD_L7:
-        _ls7 = ee.ImageCollection('LANDSAT/LE07/C01/T1_SR') \
-            .filterDate(start_date.advance(-EXTRA_DAYS, "days"),
-                        end_date.advance(EXTRA_DAYS, "days")) \
-            .filterBounds(roi) \
-            .filterMetadata('CLOUD_COVER', 'not_greater_than', CLOUD_COVER) \
-            .filterMetadata('WRS_PATH', 'equals', idict[city]['PATH']) \
-            .filterMetadata('WRS_ROW', 'equals', idict[city]['ROW']) \
-            .filter(ee.Filter.dayOfYear(idict[city]['S_DOY'], idict[city]['E_DOY'])) \
-            .map(_l5_7rename)
-
-        _ls_all = _ls5.merge(_ls7).merge(_ls8)
-    else:
-        _ls_all = _ls5.merge(_ls8)
+    # Filter collection for clouds, dates, roi & add band rations
+    ls_all = _ls_all \
+        .filterDate(start_date.advance(-info['EXTRA_DAYS'], "days"),
+                    end_date.advance(info['EXTRA_DAYS'], "days")) \
+        .filterMetadata('CLOUD_COVER', 'not_greater_than', info['CC']) \
+        .filter(ee.Filter.dayOfYear(info['JD_START'], info['JD_END'])) \
+        .filterBounds(roi) \
+        .map(_mask_clouds) \
+        .map(_add_bci) \
+        .map(_add_ratios) \
+        .select(['blue', 'green', 'red', 'nir', 'swir1', 'tirs1', 'swir2',
+                 'bci', 'ndbai', 'ndbi', 'ebbi', 'ndvi', 'ndwi'])
 
     print("Extracting the Landsat IDs for future reference ...")
-    # THIS PROCEDURE IS TOO SLOW.
-    # id_list = pd.DataFrame(_ls_all.aggregate_array('system:index').getInfo())
-    # print(f"{len(id_list)} images selected: {id_list}")
-    #
-    # id_list.to_csv(os.path.join(
-    #     info['OUT_DIR'],
-    #     f"Landsat_IDS_{city}_{year}.csv"
-    # ))
     def _get_id(element):
         return ee.Feature(None, {'id': element})
 
-    ids = _ls_all.aggregate_array('system:index')
+    ids = ls_all.aggregate_array('system:index')
     ftColl_ids = ee.FeatureCollection(ids.map(_get_id))
 
     print("Export selected LS IDs to drive")
-    ids_ofile = f"{city}_{year}_on_the_fly_{CLOUD_COVER}_{EXTRA_DAYS}_{ADD_L7}"
+    ids_ofile = f"IDs_" \
+                f"{CITY}_" \
+                f"{YEAR}_" \
+                f"CC{info['CC']}_" \
+                f"ED{info['EXTRA_DAYS']}_" \
+                f"JDs{info['JD_START']}_{info['JD_END']}_" \
+                f"L7{info['ADD_L7']}"
     task_export_ids = ee.batch.Export.table.toDrive( \
         collection=ftColl_ids, \
         description=f"{ids_ofile}_LS_IDs", \
-        folder=info['GF_FOLDER'], \
+        folder=info['GD_FOLDER'], \
         fileFormat='CSV'
     );
     task_export_ids.start()
 
-    print("Mask the clouds and select bands")
-    ls_all = _ls_all.map(_mask_clouds) \
-        .select(info['lcz']['BANDS_FLY'])
+    # Apply the reducers
+    fI_pct = ls_all.reduce(ee.Reducer.percentile([10, 50, 90]))
+    fI_std = ls_all.reduce(ee.Reducer.stdDev())
 
-    #return ls_all
+    # Merge all into one image
+    finalImage = fI_pct.addBands(fI_std)
 
-    print("Convert to image for LCZ mapping")
-    # .toBands uses img ID in name, making it useless for RF
-    def coll_to_img(img,previous):
-        return ee.Image(previous).addBands(img)
+    # Add information on orography
+    dtm = ee.Image('NASA/ASTER_GED/AG100_003').select('elevation')
+    slope = ee.Terrain.slope(dtm).clip(roi)
+    finalImage = finalImage.addBands(slope).clip(roi)
 
-    first = ee.Image(ls_all.first()).select([])
-    ls_all_img = ee.Image(ls_all.iterate(coll_to_img, first))
-    #ls_all_img = ls_all.iterate(coll_to_img, ee.Image([]))
+    if eval(info['EXPORT_TO_ASSET']):
+        # Export as asset
+        task_asset_export = ee.batch.Export.image.toAsset( \
+            image=finalImage.clip(roi), \
+            description=f"{CITY}_{YEAR}_EO_input", \
+            assetId=f"{info['EE_IN_DIR']}/{CITY}_{YEAR}_EO_input", \
+            scale=info['EXPORT_SCALE'], \
+            region=roi, \
+            maxPixels=1e13)
+        task_asset_export.start()
 
     # Print the band nalmes
-    print(f" Selected bands: {ls_all_img.bandNames().getInfo()}")
+    print(f" Available bands: {finalImage.bandNames().getInfo()}")
 
-    return ls_all_img.clip(roi)
+    return finalImage.clip(roi)
 
+def _buffer_polygons(info, ta):
+
+    def _addArea(feature):
+        area = feature.area()
+        return feature.set({'myArea': area})
+
+    def _getCentroidBuffer(feature):
+        return feature.centroid().buffer(info['LCZ']['BUFFERSIZE'])
+
+    ## Reduce large polygons
+    polyarea = ta.map(_addArea);
+    bigPoly = polyarea.filterMetadata('myArea', 'not_less_than', info['LCZ']['POLYSIZE']);
+    smaPoly = polyarea.filterMetadata('myArea', 'less_than', info['LCZ']['POLYSIZE']);
+    bigPolyRed = bigPoly.map(_getCentroidBuffer);
+    polyset = smaPoly.merge(bigPolyRed);
+
+    return polyset
 
 ## Sample regions functions to extract pixel values from polygons
 def _sample_regions(image,
@@ -283,74 +310,42 @@ def _gaussian_filter(image,roi):
     return lczF.rename('lczFilter')
 
 ## LCZ mapping script - random boot, per year.
-def lcz_mapping_rboot(city, year, info,
-                      SRC_INPUT='on_the_fly',
-                      CLOUD_COVER=10,
-                      EXTRA_DAYS=180,
-                      ADD_L7=True):
-
-    ## Helper functions
-    def _addArea(feature):
-        area = feature.area()
-        return feature.set({'myArea': area})
-
-    def _getCentroidBuffer(feature):
-        return feature.centroid().buffer(info['lcz']['BUFFERSIZE'])
+def lcz_mapping(info, CITY, YEAR):
 
     try:
         print("Get ROI")
-        roi = _get_roi(info, city)
+        roi = _get_roi(info)
 
         print("Remap the TAs, from 1-17 to 0-16")
         ta = ee.FeatureCollection(os.path.join(
-                info['EE_TA_DIR'],
-                "cai_zhi_all"))\
-            .filter(ee.Filter.eq("City",city)) \
-            .filter(ee.Filter.eq("Year", year)) \
-            .remap(ee.List.sequence(1,info['lcz']['NRLCZ'],1),
-                   ee.List.sequence(0,info['lcz']['NRLCZ']-1,1), 'Class')\
+                fn_ee_dir,
+                "TA"))\
+            .filter(ee.Filter.eq("City",CITY)) \
+            .filter(ee.Filter.eq("Year", YEAR)) \
+            .remap(ee.List.sequence(1,info['LCZ']['NRLCZ'],1),
+                   ee.List.sequence(0,info['LCZ']['NRLCZ']-1,1), 'Class')\
             .filterBounds(roi)
-        print(f"TA size for {city} ({year}): {ta.size().getInfo()}")
+        print(f"TA size for {CITY} ({YEAR}): {ta.size().getInfo()}")
 
         ## Reduce large polygons
-        polyarea   = ta.map(_addArea);
-        bigPoly    = polyarea.filterMetadata('myArea', 'not_less_than', info['lcz']['POLYSIZE']);
-        smaPoly    = polyarea.filterMetadata('myArea', 'less_than', info['lcz']['POLYSIZE']);
-        bigPolyRed = bigPoly.map(_getCentroidBuffer);
-        polyset    = smaPoly.merge(bigPolyRed);
+        polyset = _buffer_polygons(info, ta)
 
-        if SRC_INPUT == 'on_the_fly':
-            print("Produce input features on the fly")
-            finalImage = _get_all_ls(city, year, CLOUD_COVER, EXTRA_DAYS, ADD_L7).clip(roi)
-
-        elif SRC_INPUT == 'id_list':
-            finalImage = _get_all_lst_list(info, city, year).clip(roi)
-
-        else:
-            print("Read the available input features")
-            ## Add slope and latitude
-            dtm = ee.Image('NASA/ASTER_GED/AG100_003').select('elevation')
-            slope = ee.Terrain.slope(dtm).clip(roi)
-
-            inputImage = ee.Image(f"{info['EE_IN_DIR']}/{city}_{year}") \
-                .addBands(slope)
-
-            finalImage = inputImage.select(info['lcz']['BANDS']).clip(roi)
-
+        # Get the EO input assets to classify
+        finalImage = _get_all_ls(info, CITY, YEAR).clip(roi)
         print(f"Check bands: {finalImage.bandNames().getInfo()}")
 
         ## function to do the actual classificaion
         def _do_classify(seed):
 
             rand = polyset.randomColumn('random', seed)
-            ta = rand.filter(ee.Filter.lte('random', info['lcz']['BOOTTRESH']))
-            va = rand.filter(ee.Filter.gt('random', info['lcz']['BOOTTRESH']))
+            ta = rand.filter(ee.Filter.lte('random', info['LCZ']['BOOTTRESH']))
+            va = rand.filter(ee.Filter.gt('random', info['LCZ']['BOOTTRESH']))
 
-            training = _sample_regions(finalImage, ta, ['Class'], info['lcz']['SCALE'])
-            validation = _sample_regions(finalImage, va, ['Class'], info['lcz']['SCALE'])
+            training = _sample_regions(finalImage, ta, ['Class'], info['LCZ']['SCALE'])
+            validation = _sample_regions(finalImage, va, ['Class'], info['LCZ']['SCALE'])
 
-            classifier = ee.Classifier.smileRandomForest(info['lcz']['RFNRTREES'])\
-                            .train(training, 'Class', info['lcz']['BANDS_FLY'])
+            classifier = ee.Classifier.smileRandomForest(info['LCZ']['RFNRTREES'])\
+                            .train(training, 'Class', finalImage.bandNames())
             validated = validation.classify(classifier);
 
             ## Confusion matrix
@@ -361,10 +356,10 @@ def lcz_mapping_rboot(city, year, info,
             height = cm.length().get([0])
             width = cm.length().get([1])
 
-            fill1 = ee.Array([[0]]).repeat(0, ee.Number(info['lcz']['NRLCZ']).subtract(height))\
+            fill1 = ee.Array([[0]]).repeat(0, ee.Number(info['LCZ']['NRLCZ']).subtract(height))\
                 .repeat(1, width)
-            fill2 = ee.Array([[0]]).repeat(0, info['lcz']['NRLCZ'])\
-                .repeat(1, ee.Number(info['lcz']['NRLCZ']).subtract(width))
+            fill2 = ee.Array([[0]]).repeat(0, info['LCZ']['NRLCZ'])\
+                .repeat(1, ee.Number(info['LCZ']['NRLCZ']).subtract(width))
 
             a = ee.Array.cat([cm, fill1], 0)
             cmfinal = ee.Array.cat([a, fill2], 1)
@@ -375,16 +370,16 @@ def lcz_mapping_rboot(city, year, info,
 
         print("Start the classification")
         ## Apply the bootstrapping, get confusion matrices
-        bootstrap = ee.List.sequence(1, info['lcz']['NRBOOT']).map(_do_classify)
+        bootstrap = ee.List.sequence(1, info['LCZ']['NRBOOT']).map(_do_classify)
         matrices = bootstrap.map(lambda d: ee.Dictionary(d).get('confusionMatrix'))
 
         ## Make a final map, using all TAs, no bootstrap
-        training_final = _sample_regions(finalImage, polyset, ['Class'], info['lcz']['SCALE'])
-        classifier_final = ee.Classifier.smileRandomForest(info['lcz']['RFNRTREES']) \
-                            .train(training_final, 'Class', info['lcz']['BANDS_FLY'])
+        training_final = _sample_regions(finalImage, polyset, ['Class'], info['LCZ']['SCALE'])
+        classifier_final = ee.Classifier.smileRandomForest(info['LCZ']['RFNRTREES']) \
+                            .train(training_final, 'Class', finalImage.bandNames())
         lczMap = finalImage.classify(classifier_final)
-        lczMap = lczMap.remap(ee.List.sequence(0, info['lcz']['NRLCZ'] - 1, 1), \
-                              ee.List.sequence(1, info['lcz']['NRLCZ'], 1)) \
+        lczMap = lczMap.remap(ee.List.sequence(0, info['LCZ']['NRLCZ'] - 1, 1), \
+                              ee.List.sequence(1, info['LCZ']['NRLCZ'], 1)) \
                        .int8()\
                        .rename('lcz')\
                        .clip(roi)
@@ -401,18 +396,20 @@ def lcz_mapping_rboot(city, year, info,
         roi_export = roi.buffer(-500).bounds()
 
         print("Set output file name")
-        if SRC_INPUT == 'id_list':
-            ofile = f"{city}_{year}_{SRC_INPUT}"
-        else:
-            ofile = f"{city}_{year}_{SRC_INPUT}_{CLOUD_COVER}_{EXTRA_DAYS}_{ADD_L7}"
+        ofile = f"{CITY}_" \
+                f"{YEAR}_" \
+                f"CC{info['CC']}_" \
+                f"ED{info['EXTRA_DAYS']}_" \
+                f"JDs{info['JD_START']}_{info['JD_END']}_" \
+                f"L7{info['ADD_L7']}"
         print(ofile)
 
         print("Start all exports")
         ## Export confusion matrix to Google Cloud Storage.
         task_lcz_cm = ee.batch.Export.table.toDrive(\
             collection=ee.FeatureCollection(ee.Feature(None, {'matrix': matrices})),\
-            description= f"{ofile}_cm",\
-            folder= info['GF_FOLDER'],\
+            description= f"CM_{ofile}",\
+            folder= info['GD_FOLDER'],\
             fileFormat= 'CSV'
         );
         task_lcz_cm.start()
@@ -420,30 +417,20 @@ def lcz_mapping_rboot(city, year, info,
         # ## Export LCZ map as EE asset
         # task_lcz_ee = ee.batch.Export.image.toAsset(\
         #     image            = lczMap_Final.clip(roi_export),\
-        #     description      = f"{city}_{year}",\
-        #     assetId          = f"{info['EE_OUT_DIR']}/{city}_{year}",\
-        #     scale            = info['lcz']['SCALE'],\
+        #     description      = f"{CITY}_{YEAR}",\
+        #     assetId          = f"{info['EE_OUT_DIR']}/{CITY}_{YEAR}",\
+        #     scale            = info['LCZ']['SCALE'],\
         #     region           = roi_export,\
         #     maxPixels        = 1e13,\
         #     pyramidingPolicy = {".default":"mode"})
         # task_lcz_ee.start()
 
-        ## Export LCZ map as to drive - 30m
-        task_lcz_gd_30m = ee.batch.Export.image.toDrive(\
-            image            = lczMap.toInt().clip(roi_export),\
-            description      = f"{ofile}_30m",\
-            folder           = info['GF_FOLDER'],\
-            scale            = 100,\
-            region           = roi_export,\
-            maxPixels        = 1e13)
-        task_lcz_gd_30m.start()
-
         ## Export LCZ map as to drive
         task_lcz_gd = ee.batch.Export.image.toDrive(\
             image            = lczMap_Final.clip(roi_export),\
-            description      = f"{ofile}",\
-            folder           = info['GF_FOLDER'],\
-            scale            = info['lcz']['SCALE'],\
+            description      = f"LCZ_{ofile}",\
+            folder           = info['GD_FOLDER'],\
+            scale            = info['LCZ']['SCALE'],\
             region           = roi_export,\
             maxPixels        = 1e13)
         task_lcz_gd.start()
@@ -456,43 +443,18 @@ def lcz_mapping_rboot(city, year, info,
 # _Execute code
 ###############################################################################
 
-print('Set info')
-info = _read_config()
+info = _read_config(CITY)
 
-print('Set proper EE account, kode as default')
-os.system(f"bash {info['EE_SET_ACCOUNT']} kode")
+for YEAR in list(info['TA'].keys()):
 
-cities = ['Beijing', 'Guangzhou', 'Shanghai']
+    print(f"Create LCZ map for {YEAR}, start the clock ------------")
+    start = datetime.now()
 
+    lcz_mapping(
+        info=info,
+        CITY=CITY,
+        YEAR=YEAR,
+    )
 
-#TODO: check if clous or masked or not. Currently NOT for 'id_list' setting.
-
-#SRC_INPUT='on_the_fly'
-SRC_INPUT='id_list'
-CLOUD_COVER=10
-EXTRA_DAYS=120
-ADD_L7=True
-
-#for city in ['Guangzhou', 'Shanghai']:
-for city in ['Beijing']:
-     for year in [2000]:
-#for city in cities:
-#   for year in [2000, 2005, 2010, 2015, 2020]:
-
-        #print(f"Check IDs for {city} - {year}")
-        #_get_all_ls(city, year, CLOUD_COVER, EXTRA_DAYS, ADD_L7)
-
-        print(f"Create LCZ map for {city} - {year}, start the clock ------------")
-        start = datetime.now()
-
-        lcz_mapping_rboot(
-            city=city,
-            year=year,
-            info=info,
-            SRC_INPUT=SRC_INPUT,
-            CLOUD_COVER=CLOUD_COVER,
-            EXTRA_DAYS=EXTRA_DAYS,
-            ADD_L7=ADD_L7)
-
-        print(f'{city} | {year} took', datetime.now()-start, 'seconds  ------------')
+    print(f' LCZ for {YEAR} took', datetime.now()-start, 'seconds  ------------')
 ###############################################################################

@@ -4,6 +4,31 @@
 - Hyderabad: 2003, 2015, 2017, 2019 (Siva Ram Edupuganti)
 
 
+## Procedure
+
+**0. CITY config file**
+
+* Copy from existing one
+* Fill in TA years and file names
+* Set Author name(s)
+
+**1. Create TA set**
+
+```bash
+python create_ta_shp.py CITY mdemuzere
+```
+
+**2. Upload TA set**
+
+* Manually upload to EE
+
+
+**3. LCZ mapping**
+
+* TODO
+
+
+
 ## LCZ Process
 
 In General, follow the procedure as outlined in Demuzere et al. ([2020](http://doi.org/10.31219/osf.io/h5tm6), [2021](https://www.frontiersin.org/articles/10.3389/fenvs.2021.637455/)). Yet keep in mind the following changes:
