@@ -1,33 +1,64 @@
-# Generic approach to make dynamic LCZ maps
+# Dynamic LCZ maps: generic approach
 
 ## Done for:
 - Hyderabad: 2003, 2015, 2017, 2019 (Siva Ram Edupuganti)
+- Kathmandu: 1990 (Lilu Thapa) ==> NOT DONE, VERY POOR TA SET.
+
 
 
 ## Procedure
 
-**0. CITY config file**
+**0. Set python environment / Prepare CITY config & Data folders **
 
-* Copy from existing one
-* Fill in TA years and file names
+```bash
+cd /home/demuzmp4/Nextcloud/scripts/wudapt/dynamic-lcz
+con && conda activate dynamic-lcz
+```
+
+Create `.yaml` file by making copy from existing one (`./config/`):
+* Fill in TA version, year and file names
 * Set Author name(s)
+* Check if other settings need to be changed, e.g.:
+  * CC: Cloud Cover (DEFAULT: 70% Cloud Cover allowed)
+  * EXTRA_DAYS: Extra days outside the year of interest? (DEFAULT: half a year before and after)
+  * ADD_L7: include Landsat 7 sensor or not (bool as string) (DEFAULT: "True")
+  * JD _START/_END: Should julian days be excluded, e.g. because of snow cover? (DEFAULT: all days included)
+
+Create a CITY folder under `/home/demuzmp4/Nextcloud/data/wudapt/dynamic-lcz`:
+* with `input` and `output`
+* store .kml files under proper TA_VERSION: `input/TA_VERSION`
 
 **1. Create TA set**
 
 ```bash
-python create_ta_shp.py CITY mdemuzere
+python create_ta_shp.py CITY EE_ACCOUNT TA_VERSION
+
+# E.g.:
+python create_ta_shp.py Hyderabad mdemuzere v1
 ```
 
 **2. Upload TA set**
 
-* Manually upload to EE
-
+* Manually upload to EE, in respective CITY folder:
+```bash
+> projects/WUDAPT/LCZ_L0/dynamic-lcz/CITY/
+```
 
 **3. LCZ mapping**
 
-* TODO
+Create the LCZ map, including:
+- processing of EO input features on the fly (store to asset option possible via `EXPORT_TO_ASSET` in `.yaml` namelist.)
+- store Landsat ID list as csv file
+- 25 Bootstrap to get the confusion matrices for the accuracy assessment.
+- Final LCZ map using all polygons (band `lcz`)
+- Gaussian filtered version added (band `lczFilter`)
 
+```bash
+python create_lcz_map.py CITY EE_ACCOUNT TA_VERSION
 
+# E.g.:
+python create_lcz_map.py Hyderabad mdemuzere v1
+```
 
 ## LCZ Process
 

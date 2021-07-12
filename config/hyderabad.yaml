@@ -1,13 +1,15 @@
 TA:
-  2003: "[Hyderbad_2003][16-06-2021][Siva Ram Edupuganti_Mahua Mukherjee].kml"
-  2015: "[Hyderbad_2015][16-06-2021][Siva Ram Edupuganti_Mahua Mukherjee].kml"
-  2017: "[Hyderbad_2017][25-06-2021][Siva Ram Edupuganti_Mahua Mukherjee].kml"
-  2019: "[Hyderbad_2019][16-06-2021][Siva Ram Edupuganti_Mahua Mukherjee].kml"
+  v1:
+    2003: "[Hyderbad_2003][16-06-2021][Siva Ram Edupuganti_Mahua Mukherjee].kml"
+    2015: "[Hyderbad_2015][16-06-2021][Siva Ram Edupuganti_Mahua Mukherjee].kml"
+    2017: "[Hyderbad_2017][25-06-2021][Siva Ram Edupuganti_Mahua Mukherjee].kml"
+    2019: "[Hyderbad_2019][16-06-2021][Siva Ram Edupuganti_Mahua Mukherjee].kml"
+
 AUTHOR: "Siva Ram Edupuganti_Mahua Mukherjee"
 
 # Image collection settings
 CC: 70
-EXTRA_DAYS: 90
+EXTRA_DAYS: 180
 ADD_L7: "True"
 JD_START: 0
 JD_END: 366

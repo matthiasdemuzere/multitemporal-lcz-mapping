@@ -24,15 +24,21 @@ parser.add_argument(type=str, dest='CITY',
 parser.add_argument(type=str, dest='EE_ACCOUNT',
                     help="Which EE account to use?",
                     )
+parser.add_argument(type=str, dest='TA_VERSION',
+                    help='Version of TA set (default is "v1")',
+                    default="v1",
+                    )
 args = parser.parse_args()
 
 # Arguments to script
 CITY       = args.CITY
 EE_ACCOUNT = args.EE_ACCOUNT
+TA_VERSION = args.TA_VERSION
 
 # For testing
-#CITY       = 'Hyderabad'
-#EE_ACCOUNT = 'mdemuzere'
+# CITY       = 'Hyderabad'
+# EE_ACCOUNT = 'mdemuzere'
+#TA_VERSION = 'v1'
 
 # Set files and folders:
 fn_loc_dir = f"/home/demuzmp4/Nextcloud/data/wudapt/dynamic-lcz/{CITY}"
@@ -56,10 +62,10 @@ def _read_config(CITY) -> Dict[str, Dict[str, Any]]:
 
 info = _read_config(CITY)
 
-def _get_roi(info):
+def _get_roi(info, TA_VERSION):
     roi = ee.FeatureCollection(os.path.join(
         fn_ee_dir,
-        "TA"))\
+        f"TA_{TA_VERSION}"))\
         .geometry().bounds().buffer(info['LCZ']['ROIBUFFER']).bounds()
     return roi
 
@@ -135,12 +141,12 @@ def _add_ratios(img):
             .addBands(ndwi)\
             .toFloat()
 
-def _get_all_ls(info, CITY, YEAR):
+def _get_all_ls(info, CITY, TA_VERSION, YEAR):
 
     print("Gathering the appropriate Landsat images ...")
 
     # Get the roi
-    roi = _get_roi(info)
+    roi = _get_roi(info, TA_VERSION)
 
     # Sample 0.5 year before / after year of interest
     start_date = ee.Date(str(YEAR) + '-01-01')
@@ -310,16 +316,16 @@ def _gaussian_filter(image,roi):
     return lczF.rename('lczFilter')
 
 ## LCZ mapping script - random boot, per year.
-def lcz_mapping(info, CITY, YEAR):
+def lcz_mapping(info, CITY, TA_VERSION, YEAR):
 
     try:
         print("Get ROI")
-        roi = _get_roi(info)
+        roi = _get_roi(info, TA_VERSION)
 
         print("Remap the TAs, from 1-17 to 0-16")
         ta = ee.FeatureCollection(os.path.join(
                 fn_ee_dir,
-                "TA"))\
+                f"TA_{TA_VERSION}"))\
             .filter(ee.Filter.eq("City",CITY)) \
             .filter(ee.Filter.eq("Year", YEAR)) \
             .remap(ee.List.sequence(1,info['LCZ']['NRLCZ'],1),
@@ -331,7 +337,7 @@ def lcz_mapping(info, CITY, YEAR):
         polyset = _buffer_polygons(info, ta)
 
         # Get the EO input assets to classify
-        finalImage = _get_all_ls(info, CITY, YEAR).clip(roi)
+        finalImage = _get_all_ls(info, CITY, TA_VERSION, YEAR).clip(roi)
         print(f"Check bands: {finalImage.bandNames().getInfo()}")
 
         ## function to do the actual classificaion
@@ -397,6 +403,7 @@ def lcz_mapping(info, CITY, YEAR):
 
         print("Set output file name")
         ofile = f"{CITY}_" \
+                f"{TA_VERSION}_" \
                 f"{YEAR}_" \
                 f"CC{info['CC']}_" \
                 f"ED{info['EXTRA_DAYS']}_" \
@@ -445,7 +452,7 @@ def lcz_mapping(info, CITY, YEAR):
 
 info = _read_config(CITY)
 
-for YEAR in list(info['TA'].keys()):
+for YEAR in list(info['TA'][TA_VERSION].keys()):
 
     print(f"Create LCZ map for {YEAR}, start the clock ------------")
     start = datetime.now()
@@ -453,6 +460,7 @@ for YEAR in list(info['TA'].keys()):
     lcz_mapping(
         info=info,
         CITY=CITY,
+        TA_VERSION=TA_VERSION,
         YEAR=YEAR,
     )
 

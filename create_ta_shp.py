@@ -29,15 +29,22 @@ parser.add_argument(type=str, dest='CITY',
 parser.add_argument(type=str, dest='EE_ACCOUNT',
                     help="Which EE account to use?",
                     )
+parser.add_argument(type=str, dest='TA_VERSION',
+                    help='Version of TA set (default is "v1")',
+                    default="v1",
+                    )
 args = parser.parse_args()
 
 # Arguments to script
 CITY       = args.CITY
 EE_ACCOUNT = args.EE_ACCOUNT
+TA_VERSION = args.TA_VERSION
 
 # For testing
 #CITY       = 'Hyderabad'
 #EE_ACCOUNT = 'mdemuzere'
+#TA_VERSION = 'v1'
+
 
 # Set files and folders:
 fn_loc_dir = f"/home/demuzmp4/Nextcloud/data/wudapt/dynamic-lcz/{CITY}"
@@ -261,14 +268,16 @@ info = _read_config(CITY)
 df_all = gpd.GeoDataFrame()
 
 # Loop TA years
-for year in list(info['TA'].keys()):
+for year in list(info['TA'][TA_VERSION].keys()):
 
     print(f"Processing {year}")
 
     ## Read and process TAs for one city, all years
     ifile = os.path.join(
         fn_loc_dir,
-        info['TA'][year]
+        "input",
+        TA_VERSION,
+        info['TA'][TA_VERSION][year]
     )
 
     df = _check_clean_ta(ifile)
@@ -287,7 +296,8 @@ df_all['Class'] = [int(i) for i in df_all.Class]
 
 SHP_FILE = os.path.join(
         fn_loc_dir,
-        'TA.shp'
+        "input",
+        f'TA_{TA_VERSION}.shp'
     )
 df_all.to_file(SHP_FILE, driver='ESRI Shapefile')
 
