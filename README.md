@@ -79,9 +79,15 @@ python create_plots.py Hyderabad v1
 ```
 
 
-## General description
+# DESCRIPTION
+<hr>
 
-The LCZ mapping procedure in general follows the procedure as outlined in Demuzere et al. ([2020](http://doi.org/10.31219/osf.io/h5tm6), [2021](https://www.frontiersin.org/articles/10.3389/fenvs.2021.637455/)). Yet keep in mind the following changes:
+## General 
+* Keep in mind that this is still **an experimental procedure**. It has first been applied over Canadian cities ([Demuzere et al., 2020](https://osf.io/h5tm6)), and is currently also being developed further and tested over Chinese cities (Zhi, C., Demuzere, M. et al., in preparation).
+* Because of this, it also requires quite a bit of time investment from my side. So please keep this in mind when thinking about acknowledging this contribution. 
+
+## LCZ mapping 
+The dynamic LCZ mapping procedure in general follows the procedure of the LCZ Generator ([Demuzere et al. 2021](https://www.frontiersin.org/articles/10.3389/fenvs.2021.637455/)). Yet keep in mind the following changes:
 
 * only Landsat-based input features: from Landsat 5, 7 (years prior to 2003 because of the scan line error) and 8
 * Using all images with cloud cover < 70%, and for year +/- 180 days (e.g 01-07-2002 to 01-07-2004 for the year 2003)
@@ -93,11 +99,13 @@ The LCZ mapping procedure in general follows the procedure as outlined in Demuze
     * add slope from ASTER DEM to account for topography
 * LCZs are mapped at a resolution of 30m. Afterwards, the default Gaussian filter is applied, as described in [Demuzere et al. (2020)](https://doi.org/10.1038/s41597-020-00605-z).
 * resulting resolution is 100m, yet thematic resolution is slightly lower due to the Gaussian filter.
-* a buffer of 15km is applied around the bounding box of all TAs for a city. This defines the mapped Region of Interest.
+* a buffer of 15km is applied around the bounding box of all TAs (all years). This defines the mapped Region of Interest, being the same for all years.
 * all other TA filters and LCZ mapping settings from the LCZ Generator are retained.
 
 
 ## Output
+
+All outputs are available HERE > output. (MAKE SURE TO ADD LINK!!)
 
 * The outputs are similar as those provided by the LCZ Generator (see [here](https://lcz-generator.rub.de/submissions)). 
 * The FILENAME reflect the settings used in the production:
