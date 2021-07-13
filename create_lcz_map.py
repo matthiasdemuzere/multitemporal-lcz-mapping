@@ -60,8 +60,6 @@ def _read_config(CITY) -> Dict[str, Dict[str, Any]]:
         pm = yaml.load(ymlfile, Loader=yaml.FullLoader)
     return pm
 
-info = _read_config(CITY)
-
 def _get_roi(info, TA_VERSION):
     roi = ee.FeatureCollection(os.path.join(
         fn_ee_dir,

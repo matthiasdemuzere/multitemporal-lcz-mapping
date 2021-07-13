@@ -53,8 +53,6 @@ def _read_config(CITY) -> Dict[str, Dict[str, Any]]:
         pm = yaml.load(ymlfile, Loader=yaml.FullLoader)
     return pm
 
-info = _read_config(CITY)
-
 # Make stacked bar plot, color per available city.
 def plt_ta_freq_year(info, CITY, TA_VERSION) -> None:
 
