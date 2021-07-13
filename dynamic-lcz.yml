@@ -13,4 +13,5 @@ dependencies:
   - bottleneck
   - rasterio
   - matplotlib
+  - seaborn
 prefix: /home/demuzmp4/miniconda3/envs/dynamic-lcz
