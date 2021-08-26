@@ -11,11 +11,12 @@
 **0. Set python environment / Prepare CITY config & Data folders**
 
 ```bash
-cd /home/demuzmp4/Nextcloud/scripts/wudapt/dynamic-lcz
-con && conda activate dynamic-lcz
+python3.8 -m venv ./dynamic-lcz
+source ~/python-environments/dynamic-lcz/bin/activate
 
-# Make environment file for future installs
-#conda env export --from-history > dynamic-lcz.yml
+# Install packages first time
+source ~/python-environments/dynamic-lcz/bin/activate
+pip install -r /home/demuzmp4/Nextcloud/scripts/wudapt/dynamic-lcz
 ```
 
 Create `./config/CITY.yaml` file by making copy from existing one:

@@ -41,9 +41,9 @@ EE_ACCOUNT = args.EE_ACCOUNT
 TA_VERSION = args.TA_VERSION
 
 # For testing
-#CITY       = 'Hyderabad'
-#EE_ACCOUNT = 'mdemuzere'
-#TA_VERSION = 'v1'
+CITY       = 'Melbourne'
+EE_ACCOUNT = 'mdemuzere'
+TA_VERSION = 'v1'
 
 
 # Set files and folders:
@@ -148,6 +148,7 @@ def _check_clean_ta(ifile: str):
 
         ## Copy file from upload to projectdir, rename to hashId
         taNameNew = os.path.join(up_dir,taName)
+        #taNameNew = "/home/demuzmp4/Nextcloud/data/wudapt/dynamic-lcz/Melbourne/input/v1/[Melbourne][2019][JamesBennie].kml"
 
         lczConversionDict = \
             {
@@ -171,11 +172,14 @@ def _check_clean_ta(ifile: str):
             # iterate over valid LCZ layers
             for lczFolder in lczFolders:
 
+                #lczFolder = '2'
+                print(lczFolder)
+
                 ## Read content per folder (layer)
                 ## If it fails, read with fiona, take out unvalid ones, and write to temp file
                 ## Read that again with gpd and append to file.
                 try:
-                    a = gpd.read_file("{}/{}".format(up_dir, taName), driver='KML', layer=lczFolder)
+                    a = gpd.read_file(f"{taNameNew}", driver='KML', layer=lczFolder)
 
                     ## Remove style place holder or empty geometry if present
                     try:
@@ -188,10 +192,10 @@ def _check_clean_ta(ifile: str):
                     ## Sometime the above procedure is not sufficient.
                     ## Could also be a geometry that does not have a proper type
                     ## CHECK THIS: https://github.com/Toblerity/Fiona/blob/master/examples/with-shapely.py
-                    source = fiona.open("{}/{}".format(up_dir, taName), 'r', layer=lczFolder)
+                    source = fiona.open(f"{taNameNew}", 'r', layer=lczFolder)
 
                     ## Write temp file with lczFolder extention
-                    tmpFile = "{}/{}_{}".format(up_dir, taName, lczFolder)
+                    tmpFile = f"{taNameNew.replace('.kml',f'_{lczFolder}.kml')}"
                     with fiona.open(tmpFile, 'w', **source.meta, layer=lczFolder) as sink:
                         for f in source:
                             coords = f['geometry']['coordinates']
@@ -220,6 +224,7 @@ def _check_clean_ta(ifile: str):
 
                 ## Put all layers together
                 df = df.append(a, ignore_index=True)
+
 
             # convert multi part features to single part features
             # reset the index to get rid of the now multi part index

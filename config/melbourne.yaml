@@ -1,11 +1,10 @@
 TA:
   v1:
-    2003: "[Hyderbad_2003][16-06-2021][Siva Ram Edupuganti_Mahua Mukherjee].kml"
-    2015: "[Hyderbad_2015][16-06-2021][Siva Ram Edupuganti_Mahua Mukherjee].kml"
-    2017: "[Hyderbad_2017][25-06-2021][Siva Ram Edupuganti_Mahua Mukherjee].kml"
-    2019: "[Hyderbad_2019][16-06-2021][Siva Ram Edupuganti_Mahua Mukherjee].kml"
+    2006: "[Melbourne][2006][JamesBennie].kmz"
+    2016: "[Melbourne][2016][JamesBennie].kmz"
+    2019: "[Melbourne][2019][JamesBennie].kml"
 
-AUTHOR: "Siva Ram Edupuganti_Mahua Mukherjee"
+AUTHOR: "James Bennie"
 
 # Image collection settings
 CC: 70
