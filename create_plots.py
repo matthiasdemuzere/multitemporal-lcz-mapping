@@ -35,8 +35,8 @@ CITY       = args.CITY
 TA_VERSION = args.TA_VERSION
 
 # For testing
-CITY       = 'Hyderabad'
-TA_VERSION = 'v1'
+#CITY       = 'Hyderabad'
+#TA_VERSION = 'v1'
 
 # Set files and folders:
 fn_loc_dir = f"/home/demuzmp4/Nextcloud/data/wudapt/dynamic-lcz/{CITY}"

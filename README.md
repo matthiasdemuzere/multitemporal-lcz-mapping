@@ -11,7 +11,7 @@
 **0. Set python environment / Prepare CITY config & Data folders**
 
 ```bash
-python3.8 -m venv ./dynamic-lcz
+python3.8 -m venv ~/python-environments/dynamic-lcz
 source ~/python-environments/dynamic-lcz/bin/activate
 
 # Install packages first time
@@ -84,13 +84,14 @@ python create_plots.py Hyderabad v1
 <hr>
 
 ## General 
-* Keep in mind that this is still **an experimental procedure**. It has first been applied over Canadian cities ([Demuzere et al., 2020](https://osf.io/h5tm6)), and is currently also being developed further and tested over Chinese cities (Zhi, C., Demuzere, M. et al., in preparation).
+* Keep in mind that this is still **an experimental procedure**. It has first been applied over Canadian cities ([Demuzere et al., 2020](https://osf.io/h5tm6)), and has been developed and tested over Chinese mega-cities (Zhi, C., Demuzere, M., Tang, Y., Wan, Y, Exploring the characteristics and transformation of 3D urban morphology in three Chinese mega-cities. Cities, Under Review).
 * Because of this, it also requires quite a bit of time investment from my side. So please keep this in mind when thinking about acknowledging this contribution. 
 
 ## LCZ mapping 
 The dynamic LCZ mapping procedure in general follows the procedure of the LCZ Generator ([Demuzere et al. 2021](https://www.frontiersin.org/articles/10.3389/fenvs.2021.637455/)). Yet keep in mind the following changes:
 
 * only Landsat-based input features: from Landsat 5, 7 (years prior to 2003 because of the scan line error) and 8
+* this limited set of input features might result in classification errors, which might be most noticeable around edges of features, e.g. along coast lines / edges of water bodies
 * Using all images with cloud cover < 70%, and for year +/- 180 days (e.g 01-07-2002 to 01-07-2004 for the year 2003)
 * all images are masked for clouds.
 * selected bands: 
