@@ -4,6 +4,7 @@
 - Hyderabad: 2003, 2015, 2017, 2019 (Siva Ram Edupuganti)
 - Melbourne (Australia): 2006, 2016, 2019 (James Bennie)
 - Kathmandu: 1990 (Lilu Thapa) ==> **NOT DONE, VERY POOR TA SET**.
+- Pune: 2006, 2021 (Labani Saha) ==> **In progress, waiting for TA sets between 1994 - 2016**.
 
 
 ## Procedure
@@ -67,6 +68,8 @@ python create_lcz_map.py Hyderabad mdemuzere v1
 
 **4. Plotting**
 
+Once EE has finished the processing, and the data is available in Google Drive, then copy all files to its default output location, e.g. `/home/demuzmp4/Nextcloud/data/wudapt/dynamic-lcz/CITY/output`
+
 For a quick assessment of the results, create the following plots:
 - TA frequencies per year, in a stacked barchart
 - Accuracy boxplots, one per year, in multipanel: (1 x len(years))
@@ -84,8 +87,10 @@ python create_plots.py Hyderabad v1
 <hr>
 
 ## General 
-* Keep in mind that this is still **an experimental procedure**. It has first been applied over Canadian cities ([Demuzere et al., 2020](https://osf.io/h5tm6)), and has been developed and tested over Chinese mega-cities (Zhi, C., Demuzere, M., Tang, Y., Wan, Y, Exploring the characteristics and transformation of 3D urban morphology in three Chinese mega-cities. Cities, Under Review).
-* Because of this, it also requires quite a bit of time investment from my side. So please keep this in mind when thinking about acknowledging this contribution. 
+* Keep in mind that this is still **an experimental procedure**. It has first been applied over Canadian cities ([Demuzere et al., 2020](https://osf.io/h5tm6)), and has been developed and tested over Chinese mega-cities (Zhi, C., Demuzere, M., Tang, Y., Wan, Y, Exploring the characteristics and transformation of 3D urban morphology in three Chinese mega-cities. Cities, Under Review). 
+* In contrast to the other LCZ mapping efforts from Demuzere et al. 2019a,b, 2020a,b, 2021, 2022, this work only use input from the Landsat sensor. As such, the quality of such a landsat-only map might be inferior to one produced by the [LCZ-Generator](https://lcz-generator.rub.de/), which also has access to more recent Sentinel-1, 2 and other earth observation products. 
+* No temporal filtering has been applied on the resulting LCZ maps. That means that LCZ labels might jump from one LCZ class to the other in subsequent years, which might be artificial and due to the nature of the random forest classifier. 
+* Note that the creation of these dynamic LCZ maps requires quite a bit of time investment from my side. So please keep this in mind when thinking about acknowledging this contribution. 
 
 ## LCZ mapping 
 The dynamic LCZ mapping procedure in general follows the procedure of the LCZ Generator ([Demuzere et al. 2021](https://www.frontiersin.org/articles/10.3389/fenvs.2021.637455/)). Yet keep in mind the following changes:
@@ -110,12 +115,12 @@ The dynamic LCZ mapping procedure in general follows the procedure of the LCZ Ge
 All outputs are available HERE > output. (MAKE SURE TO ADD LINK!!)
 
 * The outputs are similar as those provided by the LCZ Generator (see [here](https://lcz-generator.rub.de/submissions)). 
-* The FILENAME reflect the settings used in the production:
+* The FILENAME reflects the settings used in the LCZ map production:
   * XX_: CM or IDs or LCZ (type of output, see below)
   * CITYNAME_
   * v1_: TA version (in case multiple iterations will be done)
   * YEAR_
-  * CC_: Cloud Cover
+  * CC_: Cloud Cover threshold
   * ED_: Extra Days before and after relevant year
   * JDs_: Julian days considered (0_366 = all year)
   * L7True: Landsat 7 info is used prior to 2003.

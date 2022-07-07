@@ -41,9 +41,9 @@ EE_ACCOUNT = args.EE_ACCOUNT
 TA_VERSION = args.TA_VERSION
 
 # For testing
-CITY       = 'Melbourne'
-EE_ACCOUNT = 'mdemuzere'
-TA_VERSION = 'v1'
+# CITY       = 'Melbourne'
+# EE_ACCOUNT = 'mdemuzere'
+# TA_VERSION = 'v1'
 
 
 # Set files and folders:
