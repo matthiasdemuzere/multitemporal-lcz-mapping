@@ -82,6 +82,17 @@ python create_plots.py CITY TA_VERSION
 python create_plots.py Hyderabad v1
 ```
 
+**5. LCZ map as kmz**
+
+Also store the LCZ GeoTIFF map as `.kmz`, that can be opened in Google Earth
+
+```bash
+python create_lcz_kmz.py CITY TA_VERSION
+
+# E.g.:
+python create_lcz_kmz.py Hyderabad v1
+```
+
 
 # DESCRIPTION
 <hr>
@@ -130,6 +141,7 @@ All outputs are available HERE > output. (MAKE SURE TO ADD LINK!!)
   * CM_FILENAME.csv: Raw confusion matrix, can be ignored
   * CM_FILENAME_oa_df.csv: Overall accuracies and F1 metrics per bootstrap. This is the data used to make the plot_OA_BOXPLOT.jpg
   * LCZ_FILENAME.tif: Actual LCZ map, with two bands: "lcz" is raw map, "lczFilter" is Gaussian filtered map.
+  * LCZ_FILENAME.kmz: LCZ map ("lczFilter"), in kmz format, which can be opened in Google Earth.
   
 * Figures:
   * plot_TA_FREQ.jpg: stacked bar plot showing the number of TAs per class and year
