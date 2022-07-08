@@ -52,7 +52,7 @@ def _read_config(CITY) -> Dict[str, Dict[str, Any]]:
     return pm
 
 
-def make_kmz(info, CITY, TA_VERSION, BAND_TO_PLOT=1, NRLCZ=17) -> None:
+def make_kmz(info, CITY, TA_VERSION, BAND_TO_PLOT=1) -> None:
     """
     Function to create a kmz file with the lcz map in the correct color map
     """
@@ -89,7 +89,13 @@ def make_kmz(info, CITY, TA_VERSION, BAND_TO_PLOT=1, NRLCZ=17) -> None:
         cmap.set_under(color='white')
         figsize = (lczTif.shape[1] / 100, lczTif.shape[2] / 100)
         fig, ax = plt.subplots(figsize=figsize)
-        lczTif[BAND_TO_PLOT].plot(cmap=cmap, vmin=1, vmax=NRLCZ, ax=ax, add_colorbar=False)
+        lczTif[BAND_TO_PLOT].plot(
+            cmap=cmap,
+            vmin=1,
+            vmax=info['LCZ']['NRLCZ'],
+            ax=ax,
+            add_colorbar=False
+        )
         ax.set_title('')
         plt.axis('off')
 
@@ -158,5 +164,5 @@ def make_kmz(info, CITY, TA_VERSION, BAND_TO_PLOT=1, NRLCZ=17) -> None:
 ##### __main__  scope
 ###############################################################################
 info = _read_config(CITY)
-make_kmz(info, CITY, TA_VERSION, BAND_TO_PLOT=1, NRLCZ=17)
+make_kmz(info, CITY, TA_VERSION, BAND_TO_PLOT=1)
 ###############################################################################

@@ -127,6 +127,7 @@ def _get_oa_df(info, CITY, TA_VERSION, YEAR):
     df = pd.read_csv(f'{fn_loc_dir}/output/{cm_raw}.csv')
     mStr = df.iloc[:, 1][0].replace("[", "").replace("]", "")
     mList = [int(e) for e in mStr.split(',')]
+
     arr = np.array(mList)
     arr_oa = arr.reshape(info['LCZ']['NRBOOT'],
                          info['LCZ']['NRLCZ'],
@@ -166,8 +167,19 @@ def _get_oa_df(info, CITY, TA_VERSION, YEAR):
         df_oa.loc[i, 3] = sumDiagOAW / sumOAWTotal  # OA_weighted
         df_oa.loc[i, 5:] = 2 * ((pa * ua) / (pa + ua))
 
+    # create formated confusion matrix, average over all bootstraps
+    dfC = pd.DataFrame(arr_oa[i],
+                       columns=np.arange(1, info['LCZ']['NRLCZ'] + 1, 1),
+                       index=np.arange(1, info['LCZ']['NRLCZ'] + 1, 1)
+                       ).astype(int)
+    dfC.loc['Total'] = sumColumns
+    dfC['Total'] = dfC.sum(1)
+    dfC.loc['PA (%)'] = np.append(np.round((diag / sumColumns) * 100, 1), np.nan)
+    dfC['UA (%)'] = np.append(np.round((diag / sumRows) * 100, 1),
+                              [np.nan, np.round((diag.sum() / sumColumns.sum()) * 100, 1)])
+
     ## Store dataframe to file, for futher processing
-    df_oa.to_csv(os.path.join(
+    dfC.to_csv(os.path.join(
         fn_loc_dir,
         "output",
         f"{cm_raw}_oa_df.csv"))
