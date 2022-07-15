@@ -1,0 +1,41 @@
+TA:
+  v1:
+    2000: "TA_2000.kmz"
+
+AUTHOR: "Benjamin Obe"
+
+# Image collection settings
+CC: 70
+EXTRA_DAYS: 180
+ADD_L7: "True"
+JD_START: 0
+JD_END: 366
+
+# ASSET INFO
+EXPORT_TO_ASSET: "False"
+EE_IN_DIR: "projects/WUDAPT/LCZ_L0/dynamic-lcz/input"
+EXPORT_SCALE: 30
+
+# LCZ mapping parameters
+LCZ:
+  ROIBUFFER: 15000
+  SCALE: 100
+  POLYSIZE: 300000
+  NRLCZ: 17
+  RFNRTREES: 30
+  NRBOOT: 25
+  BOOTTRESH: 0.7
+  BUFFERSIZE: 300
+  COLORS: [
+      '#8C0000', '#D10000', '#FF0000', '#BF4D00',
+      '#FF6600', '#FF9955', '#FAEE05', '#BCBCBC',
+      '#FFCCAA', '#555555', '#006A00', '#00AA00',
+      '#648525', '#B9DB79', '#000000', '#FBF7AE',
+      '#6A6AFF',
+  ]
+
+# Other
+CM_WEIGHTS: './tables/LCZ_metric.csv'
+GD_FOLDER: "EE"
+
+
