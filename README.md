@@ -6,6 +6,7 @@
 - Kathmandu: 1990 (Lilu Thapa) ==> **NOT DONE, VERY POOR TA SET**.
 - Pune: 2006, 2021 (Labani Saha) ==> **In progress, waiting for TA sets between 1994 - 2016**.
 - Lagos: 2000 (Benjamin Obe) ==> **In progress, what about LCZ 18? And what for the recent years with enlarged LCZ-Generator request?**.
+- Wuhan: 2000, 2005, 2010, and 2020 (Wayne) ==> **Explained, see email to wayneding7@163.com**.
 
 ## Procedure
 
