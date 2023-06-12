@@ -11,7 +11,7 @@
 ## Procedure
 The procedure is based upon previous experiences:
 - Canadian cities: [Demuzere et al. (2020)](https://osf.io/h5tm6/)
-- Beijing, Shanghai, Guangzhou: 2000-2020, every 5 years. Used in [Cai et al., 2023](https://doi.org/10.1016/j.cities.2022.103988).
+- Beijing, Shanghai, Guangzhou: 2000-2020, every 5 years. Used in [Cai et al., 2022](https://doi.org/10.1016/j.cities.2022.103988).
 
 **0. Set python environment**
 
@@ -100,7 +100,7 @@ python create_lcz_kmz.py Hyderabad v1
 ```
 
 
-# DESCRIPTION
+# DESCRIPTION (also available as a .docx file [here](https://geo-cloud.geographie.ruhr-uni-bochum.de/index.php/apps/onlyoffice/31100263?filePath=%2Fdata%2Fwudapt%2Fdynamic-lcz%2FREADME.docx))
 <hr>
 
 ## General 
