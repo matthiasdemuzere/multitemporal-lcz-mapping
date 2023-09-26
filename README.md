@@ -12,6 +12,8 @@
 - Prior to using the Earth Engine Python client library, you need to authenticate (verify your identity) and use the resultant credentials to initialize the Python client. See [here](https://developers.google.com/earth-engine/guides/python_install) for more info.
 - training area polygons representative for each year of interest. Ideally the TA sets across years share the same polygons (for areas that did not change over time), to increase consistency across the dynamic LCZ maps. Make sure to make the training area sets according to this template (https://www.wudapt.org/wp-content/uploads/2020/08/WUDAPT_L0_Training_template.kml) and these guidelines (https://www.wudapt.org/digitize-training-areas/)!
 
+<hr>
+
 ## LCZ mapping procedure
 The dynamic LCZ mapping procedure in general follows the procedure of the [LCZ-Generator](https://lcz-generator.rub.de/). Yet keep in mind the following changes:
 
@@ -34,7 +36,7 @@ The dynamic LCZ mapping procedure in general follows the procedure of the [LCZ-G
 
 Please follow the steps below to create mult-temporal LCZ maps for your city of choice.
 
-**0. Set python environment**
+### **0. Set python environment**
 
 ```bash
 python3.9 -m venv venv
@@ -44,7 +46,7 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-**1. Prepare CITY config & Data folders**
+### **1. Prepare CITY config & Data folders**
 
 Create `./config/CITY.yaml` file by making a copy from existing one:
 * In this `.yaml` file name, replace CITY by the name of your city
@@ -61,7 +63,7 @@ Create a CITY folder under `data/`:
 * store .kml or .kmz files under proper filename, e.g.: `input/XX`, with XX referring to the version (same as in CITY.yaml, e.g. v1)
 
 
-**2. Create TA set**
+### **2. Create TA set**
 
 * This routine combines all years into one .shp and afterwards .zip.
 ```bash
@@ -71,12 +73,12 @@ python create_ta_shp.py CITY EE_ACCOUNT TA_VERSION
 python create_ta_shp.py Melbourne v1
 ```
 
-**3. Upload TA set**
+### **3. Upload TA set**
 
 * Manually upload to EE, in your `EE_IN_DIR` defined in the `.yaml` file.
 
 
-**4. LCZ mapping**
+### **4. LCZ mapping**
 
 Create the LCZ map, including:
 - processing of EO input features on the fly (store to asset option possible via `EXPORT_TO_ASSET` in `.yaml` namelist)
@@ -92,12 +94,12 @@ python create_lcz_map.py CITY TA_VERSION
 python create_lcz_map.py Melbourne v1
 ```
 
-**5. Copy files to local output folder**
+### **5. Copy files to local output folder**
 
 Once Google Earth Engine has finished the processing, and the data is available in your Google Drive folder, then copy all files to its default output location, e.g. `./data/CITY/output/`
 
 
-**6. Plotting**
+### **6. Plotting**
 
 For a quick assessment of the results, create the following plots:
 - Training Area polygon frequencies per year, in a stacked barchart
@@ -111,7 +113,7 @@ python create_plots.py CITY TA_VERSION
 python create_plots.py Melbourne v1
 ```
 
-**7. LCZ map as kmz**
+### **7. LCZ map as kmz**
 
 Also store the LCZ GeoTIFF map as `.kmz`, that can be opened in Google Earth
 
