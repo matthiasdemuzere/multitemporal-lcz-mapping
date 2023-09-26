@@ -1,31 +1,52 @@
-# Dynamic LCZ maps: generic approach
+# Multi-temporal Local Climate Zone mapping
 
-## Done for:
-- Hyderabad: 2003, 2015, 2017, 2019 (Siva Ram Edupuganti)
-- Melbourne (Australia): 2006, 2016, 2019 (James Bennie)
-- Kathmandu: 1990 (Lilu Thapa) ==> **NOT DONE, VERY POOR TA SET**.
-- Pune: 2006, 2021 (Labani Saha) ==> **In progress, waiting for TA sets between 1994 - 2016**.
-- Lagos: 2000 (Benjamin Obe) ==> Seems to have been used in [Obe et al. (2023 - preprint)](https://www.researchsquare.com/article/rs-2869856/v1)
- 
+## General 
+- Keep in mind that this is still an experimental procedure. It has first been applied over Canadian cities ([Demuzere et al., 2020](https://osf.io/h5tm6/)), and has been developed further and tested over Chinese mega-cities ([Cai et al., 2022](https://doi.org/10.1016/j.cities.2022.103988)).
+- In contrast to the other LCZ mapping efforts over Europe ([Demuzere et al., 2019](http://doi.org/10.1371/journal.pone.0214474)), the USA ([Demuzere et al., 2020](http://doi.org/10.1038/s41597-020-00605-z)), and the world ([Demuzere et al., 2022](http://doi.org/10.5194/essd-14-3835-2022)), this work only uses input from the Landsat sensor. As such, the quality of such a landsat-only map might be inferior to one produced by the [LCZ-Generator](https://lcz-generator.rub.de/) ([Demuzere et al., 2021](http://doi.org/10.3389/fenvs.2021.637455)), which also has access to more recent Sentinel-1, 2 and other earth observation products.
+- No temporal filtering has been applied on the resulting LCZ maps. That means that LCZ labels might jump from one LCZ class to another in subsequent years, which might be artificial and due to the nature of the random forest classifier.
 
-## Procedure
-The procedure is based upon previous experiences:
-- Canadian cities: [Demuzere et al. (2020)](https://osf.io/h5tm6/)
-- Beijing, Shanghai, Guangzhou: 2000-2020, every 5 years. Used in [Cai et al., 2022](https://doi.org/10.1016/j.cities.2022.103988).
+
+## Requirements
+- a working python environment: see below how to set this up.
+- an account on Google Earth Engine. You can sign up [here](https://earthengine.google.com/signup/). 
+- training area polygons representative for each year of interest. Ideally the TA sets across years share the same polygons (for areas that did not change over time), to increase consistency across the dynamic LCZ maps. Make sure to make the training area sets according to this template (https://www.wudapt.org/wp-content/uploads/2020/08/WUDAPT_L0_Training_template.kml) and these guidelines (https://www.wudapt.org/digitize-training-areas/)!
+
+## LCZ mapping procedure
+The dynamic LCZ mapping procedure in general follows the procedure of the [LCZ-Generator](https://lcz-generator.rub.de/). Yet keep in mind the following changes:
+
+- a buffer of 15km is applied around the bounding box of all TAs (all years). This defines the mapped Region of Interest, being the same for all years.
+- all other TA filters and LCZ mapping settings from the LCZ Generator are retained.
+- Only TA set representative for year X is used for the production of the LCZ map of that year X. As such, the resulting LCZ maps might differ from year to year, even in areas that did not change.
+- only Landsat input features are used: from Landsat 5, 7 (years prior to 2003 because of the scan line error) and 8
+- this limited set of input features might result in classification errors, which might be most noticeable around edges of features, e.g. along coastlines / edges of water bodies
+- all images with cloud cover < 70%, and for year +/- 180 days (e.g 01-07-2002 to 01-07-2004 for the year 2003) are used
+- all images are masked for clouds
+- selected bands:
+   - blue, green, red, near infrared (nir), shortwave infrared (swir) 1/2 and thermal infrared (tirs),
+   - band rations bci, ndbai, ndbi, ebbi, ndvi, ndwi 
+   - for all bands and all images, derive 10th, 50th and 90th percentile and standard deviation
+   - add slope from ASTER DEM to account for topography
+- LCZs are mapped at a resolution of 30m. Afterwards, the default Gaussian filter is applied, as described in [Demuzere et al. (2020)](http://doi.org/10.1038/s41597-020-00605-z).
+- resulting resolution is 100m, yet thematic resolution is slightly lower due to the Gaussian filter.
+
+
+
+Please follow the steps below to create mult-temporal LCZ maps for your city of choice.
 
 **0. Set python environment**
 
 ```bash
-python3.11 -m venv ~/python-environments/dynamic-lcz
-source ~/python-environments/dynamic-lcz/bin/activate
+python3.9 -m venv venv
+source venv/bin/activate
 
 # Install packages first time
-pip install -r /home/demuzmp4/Nextcloud/scripts/wudapt/dynamic-lcz/requirements.txt
+pip install -r requirements.txt
 ```
 
 **1. Prepare CITY config & Data folders**
 
-Create `./config/CITY.yaml` file by making copy from existing one:
+Create `./config/CITY.yaml` file by making a copy from existing one:
+* In this `.yaml` file name, replace CITY by the name of your city
 * Fill in TA version (e.g. v1), year (e.g. 2003) and file names (...)
 * Set Author name(s)
 * Check if other settings need to be changed, e.g.:
@@ -34,9 +55,9 @@ Create `./config/CITY.yaml` file by making copy from existing one:
   * ADD_L7: include Landsat 7 sensor or not (bool as string) (DEFAULT: `"True"`)
   * JD _START/_END: Should julian days be excluded, e.g. because of snow cover? (DEFAULT: `0` and `366` = all days included)
 
-Create a CITY folder under `/home/demuzmp4/Nextcloud/data/wudapt/dynamic-lcz`:
-* with `input/` and `output/`
-* store .kml files under proper filename, e.g.: `input/TA_XX`, with XX referring to the version (same as in CITY.yaml)
+Create a CITY folder under `data/`:
+* with sub-folders `input/` and `output/`
+* store .kml or .kmz files under proper filename, e.g.: `input/XX`, with XX referring to the version (same as in CITY.yaml, e.g. v1)
 
 
 **2. Create TA set**
@@ -46,38 +67,39 @@ Create a CITY folder under `/home/demuzmp4/Nextcloud/data/wudapt/dynamic-lcz`:
 python create_ta_shp.py CITY EE_ACCOUNT TA_VERSION
 
 # E.g.:
-python create_ta_shp.py Hyderabad mdemuzere v1
+python create_ta_shp.py Melbourne v1
 ```
 
 **3. Upload TA set**
 
-* Manually upload to EE, in respective CITY folder:
-```bash
-> projects/WUDAPT/LCZ_L0/dynamic-lcz/CITY/
-```
+* Manually upload to EE, in your `EE_IN_DIR` defined in the `.yaml` file.
+
 
 **4. LCZ mapping**
 
 Create the LCZ map, including:
-- processing of EO input features on the fly (store to asset option possible via `EXPORT_TO_ASSET` in `.yaml` namelist.)
+- processing of EO input features on the fly (store to asset option possible via `EXPORT_TO_ASSET` in `.yaml` namelist)
 - store Landsat ID list as csv file
-- 25 Bootstrap to get the confusion matrices for the accuracy assessment.
+- 25 bootstraps to get the confusion matrices for the accuracy assessment.
 - Final LCZ map using all polygons (band `lcz`)
 - Gaussian filtered version added (band `lczFilter`)
 
 ```bash
-python create_lcz_map.py CITY EE_ACCOUNT TA_VERSION
+python create_lcz_map.py CITY TA_VERSION
 
 # E.g.:
-python create_lcz_map.py Hyderabad mdemuzere v1
+python create_lcz_map.py Melbourne v1
 ```
 
-**5. Plotting**
+**5. Copy files to local output folder**
 
-Once EE has finished the processing, and the data is available in Google Drive, then copy all files to its default output location, e.g. `/home/demuzmp4/Nextcloud/data/wudapt/dynamic-lcz/CITY/output`
+Once Google Earth Engine has finished the processing, and the data is available in your Google Drive folder, then copy all files to its default output location, e.g. `./data/CITY/output/`
+
+
+**6. Plotting**
 
 For a quick assessment of the results, create the following plots:
-- TA frequencies per year, in a stacked barchart
+- Training Area polygon frequencies per year, in a stacked barchart
 - Accuracy boxplots, one per year, in multipanel: (1 x len(years))
 - lczFilter map, one per year, in multipanel: (1 x len(years))
 
@@ -85,10 +107,10 @@ For a quick assessment of the results, create the following plots:
 python create_plots.py CITY TA_VERSION
 
 # E.g.:
-python create_plots.py Hyderabad v1
+python create_plots.py Melbourne v1
 ```
 
-**6. LCZ map as kmz**
+**7. LCZ map as kmz**
 
 Also store the LCZ GeoTIFF map as `.kmz`, that can be opened in Google Earth
 
@@ -96,43 +118,13 @@ Also store the LCZ GeoTIFF map as `.kmz`, that can be opened in Google Earth
 python create_lcz_kmz.py CITY TA_VERSION
 
 # E.g.:
-python create_lcz_kmz.py Hyderabad v1
+python create_lcz_kmz.py Melbourne v1
 ```
 
 
-# DESCRIPTION (also available as a .docx file [here](https://geo-cloud.geographie.ruhr-uni-bochum.de/index.php/apps/onlyoffice/31100263?filePath=%2Fdata%2Fwudapt%2Fdynamic-lcz%2FREADME.docx))
 <hr>
 
-## General 
-* Keep in mind that this is still **an experimental procedure**. It has first been applied over Canadian cities ([Demuzere et al., 2020](https://osf.io/h5tm6)), and has been further developed, fine-tuned and tested over Chinese mega-cities ([Zhi, C., Demuzere, M., Tang, Y., Wan, Y, Exploring the characteristics and transformation of 3D urban morphology in three Chinese mega-cities. Cities](https://doi.org/10.1016/j.cities.2022.103988)). 
-* In contrast to the other LCZ mapping efforts from Demuzere et al. 2019a,b, 2020a,b, 2021, 2022, this work only uses input from the Landsat sensor. As such, the quality of such a landsat-only map might be inferior to one produced by the [LCZ-Generator](https://lcz-generator.rub.de/), which also has access to more recent Sentinel-1, 2 and other earth observation products. 
-* No temporal filtering has been applied on the resulting LCZ maps. That means that LCZ labels might jump from one LCZ class to the other in subsequent years, which might be artificial and due to the nature of the random forest classifier. However, temporal filtering has been applied in Qi et al., Mapping urban form into local climate zones for the continental U.S. from 1986 to 2020 (under review).
-* Note that the creation of these dynamic LCZ maps requires quite a bit of time investment from my side. So please keep this in mind when thinking about acknowledging this contribution. 
-
-## Requirements
-* Training area polygons representative for each year of interest. Ideally the TA sets across years share the same polygons (for areas that did not change over time), to increase consistency across the dynamic LCZ maps
-* Make sure to make the training area sets according to this template (https://www.wudapt.org/wp-content/uploads/2020/08/WUDAPT_L0_Training_template.kml) and these guidelines (https://www.wudapt.org/digitize-training-areas/)!! If not, I will be unable to process them.
-
-
-## LCZ mapping 
-The dynamic LCZ mapping procedure in general follows the procedure of the LCZ Generator ([Demuzere et al. 2021](https://www.frontiersin.org/articles/10.3389/fenvs.2021.637455/)). Yet keep in mind the following changes:
-
-* only Landsat-based input features: from Landsat 5, 7 (years prior to 2003 because of the scan line error) and 8
-* this limited set of input features might result in classification errors, which might be most noticeable around edges of features, e.g. along coast lines / edges of water bodies
-* Using all images with cloud cover < 70%, and for year +/- 180 days (e.g 01-07-2002 to 01-07-2004 for the year 2003)
-* all images are masked for clouds.
-* selected bands: 
-    * blue, green, red, near infrared (nir), shortwave infrared (swir) 1/2 and thermal infrared (tirs), 
-    * band rations bci, ndbai, ndbi, ebbi, ndvi, ndwi 
-    * for all bands and all images, derive 10th, 50th and 90th percentile and standard deviation
-    * add slope from ASTER DEM to account for topography
-* LCZs are mapped at a resolution of 30m. Afterwards, the default Gaussian filter is applied, as described in [Demuzere et al. (2020)](https://doi.org/10.1038/s41597-020-00605-z).
-* resulting resolution is 100m, yet thematic resolution is slightly lower due to the Gaussian filter.
-* a buffer of 15km is applied around the bounding box of all TAs (all years). This defines the mapped Region of Interest, being the same for all years.
-* all other TA filters and LCZ mapping settings from the LCZ Generator are retained.
-
-
-## Output
+## Outputs
 
 All outputs are available in `output/`.
 
@@ -160,13 +152,20 @@ All outputs are available in `output/`.
   * plot_LCZ_MAP.jpg: LCZ map (using lczFilter band) per year
 
 
-## References
+## Relevant References
 
-* Demuzere M, Bechtel B, Mills G. Global transferability of local climate zone models. Urban Clim. 2019a;27:46-63. doi:10.1016/j.uclim.2018.11.001
-* Demuzere M, Bechtel B, Middel A, Mills G. Mapping Europe into local climate zones. Mourshed M, ed. PLoS One. 2019b;14(4):e0214474. doi:10.1371/journal.pone.0214474
-* Demuzere M, Hankey S, Mills G, Zhang W, Lu T, Bechtel B. Combining expert and crowd-sourced training data to map urban form and functions for the continental US. Sci Data. 2020a;7(1):264. doi:10.1038/s41597-020-00605-z
-* Demuzere M, Mihara T, Redivo CP, Feddema J, Setton E. Multi-temporal LCZ maps for Canadian functional urban areas. OSF Prepr. December 2020b. doi:10.31219/osf.io/h5tm6
-* Demuzere M, Kittner J, Bechtel B. LCZ Generator: A Web Application to Create Local Climate Zone Maps. Front Environ Sci. 2021;9. doi:10.3389/fenvs.2021.637455
-* Demuzere M, Kittner J, Martilli A, et al. A global map of Local Climate Zones to support earth system modelling and urban scale environmental science. Earth Syst Sci Data Discuss. 2022.
-* Cai Z, Demuzere M, Tang Y, Wan Y. The characteristic and transformation of 3D urban morphology in three Chinese mega-cities. Cities. 2022;(July 2021):103988. doi:10.1016/j.cities.2022.103988
+* Demuzere M, Bechtel B, Mills G. Global transferability of local climate zone models. Urban Clim. 2019a;27:46-63. doi:[10.1016/j.uclim.2018.11.001](http://doi.org/10.1016/j.uclim.2018.11.001)
+* Demuzere M, Bechtel B, Middel A, Mills G. Mapping Europe into local climate zones. Mourshed M, ed. PLoS One. 2019b;14(4):e0214474. doi:[10.1371/journal.pone.0214474](http://doi.org/10.1371/journal.pone.0214474)
+* Demuzere M, Hankey S, Mills G, Zhang W, Lu T, Bechtel B. Combining expert and crowd-sourced training data to map urban form and functions for the continental US. Sci Data. 2020a;7(1):264. doi:[10.1038/s41597-020-00605-z](http://doi.org/10.1038/s41597-020-00605-z)
+* Demuzere M, Mihara T, Redivo CP, Feddema J, Setton E. Multi-temporal LCZ maps for Canadian functional urban areas. OSF Prepr. December 2020b. doi:[10.31219/osf.io/h5tm6](http://doi.org/10.31219/osf.io/h5tm6)
+* Demuzere M, Kittner J, Bechtel B. LCZ Generator: A Web Application to Create Local Climate Zone Maps. Front Environ Sci. 2021;9. doi:[10.3389/fenvs.2021.637455](http://doi.org/10.3389/fenvs.2021.637455)
+* Demuzere M, Kittner J, Martilli A, et al. A global map of Local Climate Zones to support earth system modelling and urban scale environmental science. Earth Syst Sci Data, doi: [10.5194/essd-14-3835-2022](http://doi.org/10.5194/essd-14-3835-2022)
+* Cai Z, Demuzere M, Tang Y, Wan Y. The characteristic and transformation of 3D urban morphology in three Chinese mega-cities. Cities. 2022;(July 2021):103988. doi:[10.1016/j.cities.2022.103988](http://doi.org/10.1016/j.cities.2022.103988)
 
+## Disclaimer
+
+### Code Development:
+The code provided is for educational and informational purposes only. It is not intended for production use without thorough testing and validation. The author makes no representations or warranties regarding the accuracy or completeness of the code. The author shall not be liable for any errors or omissions in the code or for any actions taken in reliance on the code. Use the code at your own risk.
+
+### Data:
+The data provided is for reference and informational purposes only. The author makes no representations or warranties regarding the accuracy, completeness, or suitability of the data for any specific purpose. The author shall not be liable for any errors or omissions in the data or for any actions taken in reliance on the data. Use the data at your own risk.

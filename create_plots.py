@@ -35,14 +35,11 @@ CITY       = args.CITY
 TA_VERSION = args.TA_VERSION
 
 # For testing
-#CITY       = 'Hyderabad'
+# CITY      = 'Melbourne'
 #TA_VERSION = 'v1'
 
-# Set files and folders:
-fn_loc_dir = f"/home/demuzmp4/Nextcloud/data/wudapt/dynamic-lcz/{CITY}"
 
-
-
+# ************** HELPER FUNCTIONS ***********************
 def _read_config(CITY) -> Dict[str, Dict[str, Any]]:
     with open(
         os.path.join(
@@ -405,6 +402,9 @@ def plot_lczmap_multiplot(info, CITY, TA_VERSION, BAND_TO_PLOT, DPI):
 ###############################################################################
 
 info = _read_config(CITY)
+
+# Set files and folders:
+fn_loc_dir = f"./data/{CITY}"
 
 print("TA frequency plot")
 plt_ta_freq_year(info=info, CITY=CITY, TA_VERSION=TA_VERSION)

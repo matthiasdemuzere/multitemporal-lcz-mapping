@@ -1,7 +1,6 @@
 import yaml
 from typing import Dict
 from typing import Any
-import traceback
 import os
 import ee
 ee.Initialize()
@@ -21,9 +20,6 @@ parser = argparse.ArgumentParser(
 parser.add_argument(type=str, dest='CITY',
                     help='City to classify',
                     )
-parser.add_argument(type=str, dest='EE_ACCOUNT',
-                    help="Which EE account to use?",
-                    )
 parser.add_argument(type=str, dest='TA_VERSION',
                     help='Version of TA set (default is "v1")',
                     default="v1",
@@ -32,40 +28,32 @@ args = parser.parse_args()
 
 # Arguments to script
 CITY       = args.CITY
-EE_ACCOUNT = args.EE_ACCOUNT
 TA_VERSION = args.TA_VERSION
 
 # For testing
 # CITY       = 'Hyderabad'
-# EE_ACCOUNT = 'mdemuzere'
-#TA_VERSION = 'v1'
-
-# Set files and folders:
-fn_loc_dir = f"/home/demuzmp4/Nextcloud/data/wudapt/dynamic-lcz/{CITY}"
-fn_ee_dir  = f"projects/WUDAPT/LCZ_L0/dynamic-lcz/{CITY}"
-fn_ee_acc  = "/home/demuzmp4/Nextcloud/scripts/tools/set_ee_account.sh"
-
-print("> Setting requested EE acount first ...")
-os.system(f"bash {fn_ee_acc} {EE_ACCOUNT}")
+# TA_VERSION = 'v1'
 
 # ************** HELPER FUNCTIONS ***********************
 
 def _read_config(CITY) -> Dict[str, Dict[str, Any]]:
     with open(
         os.path.join(
-            '/home/demuzmp4/Nextcloud/scripts/wudapt/dynamic-lcz/config',
+            './config',
             f'{CITY.lower()}.yaml',
         ),
     ) as ymlfile:
         pm = yaml.load(ymlfile, Loader=yaml.FullLoader)
     return pm
 
+
 def _get_roi(info, TA_VERSION):
     roi = ee.FeatureCollection(os.path.join(
-        fn_ee_dir,
+        info['EE_IN_DIR'],
         f"TA_{TA_VERSION}"))\
         .geometry().bounds().buffer(info['LCZ']['ROIBUFFER']).bounds()
     return roi
+
 
 def _mask_clouds(img):
   # Bits 3 and 5 are cloud shadow and cloud, respectively.
@@ -322,7 +310,7 @@ def lcz_mapping(info, CITY, TA_VERSION, YEAR):
 
         print("Remap the TAs, from 1-17 to 0-16")
         ta = ee.FeatureCollection(os.path.join(
-                fn_ee_dir,
+                info['EE_IN_DIR'],
                 f"TA_{TA_VERSION}"))\
             .filter(ee.Filter.eq("City",CITY)) \
             .filter(ee.Filter.eq("Year", YEAR)) \

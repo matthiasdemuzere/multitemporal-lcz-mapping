@@ -35,11 +35,8 @@ CITY       = args.CITY
 TA_VERSION = args.TA_VERSION
 
 # For testing
-#CITY       = 'Hyderabad'
-#TA_VERSION = 'v1'
-
-# Set files and folders:
-fn_loc_dir = f"/home/demuzmp4/Nextcloud/data/wudapt/dynamic-lcz/{CITY}"
+# CITY       = 'Melbourne'
+# TA_VERSION = 'v1'
 
 def _read_config(CITY) -> Dict[str, Dict[str, Any]]:
     with open(
@@ -59,6 +56,7 @@ def make_kmz(info, CITY, TA_VERSION, BAND_TO_PLOT=1) -> None:
 
     # Get the years in the dataset
     years = list(info['TA'][TA_VERSION].keys())
+
 
     for y, year in enumerate(years):
 
@@ -164,5 +162,7 @@ def make_kmz(info, CITY, TA_VERSION, BAND_TO_PLOT=1) -> None:
 ##### __main__  scope
 ###############################################################################
 info = _read_config(CITY)
+# Set files and folders:
+fn_loc_dir = f"/home/demuzmp4/Nextcloud/data/wudapt/dynamic-lcz/{CITY}"
 make_kmz(info, CITY, TA_VERSION, BAND_TO_PLOT=1)
 ###############################################################################

@@ -13,7 +13,11 @@ import traceback
 import argparse
 from argparse import RawTextHelpFormatter
 import zipfile
+import pandas as pd
 
+import ee
+#ee.Authenticate()
+ee.Initialize()
 
 parser = argparse.ArgumentParser(
     description="PURPOSE: Prepare TA set that contains TAs for all cities\n \n"
@@ -26,9 +30,6 @@ parser = argparse.ArgumentParser(
 parser.add_argument(type=str, dest='CITY',
                     help='City to classify',
                     )
-parser.add_argument(type=str, dest='EE_ACCOUNT',
-                    help="Which EE account to use?",
-                    )
 parser.add_argument(type=str, dest='TA_VERSION',
                     help='Version of TA set (default is "v1")',
                     default="v1",
@@ -37,43 +38,35 @@ args = parser.parse_args()
 
 # Arguments to script
 CITY       = args.CITY
-EE_ACCOUNT = args.EE_ACCOUNT
 TA_VERSION = args.TA_VERSION
 
 # For testing
-# CITY       = 'Melbourne'
-# EE_ACCOUNT = 'mdemuzere'
-# TA_VERSION = 'v1'
+#CITY       = 'Melbourne'
+#TA_VERSION = 'v1'
 
 
-# Set files and folders:
-fn_loc_dir = f"/home/demuzmp4/Nextcloud/data/wudapt/dynamic-lcz/{CITY}"
-fn_ee_dir  = f"projects/WUDAPT/LCZ_L0/dynamic-lcz/{CITY}"
-fn_ee_acc  = "/home/demuzmp4/Nextcloud/scripts/tools/set_ee_account.sh"
-
-print("> Setting requested EE acount first ...")
-os.system(f"bash {fn_ee_acc} {EE_ACCOUNT}")
-
-print("> Create EE folder if it does not already exists ...")
-try:
-    os.system(f"earthengine create folder {fn_ee_dir}")
-except Exception:
-    err = traceback.format_exc()
-    print(f"WARNING, unable to create EE folder: \n {err}")
-    pass
-
-# ************** HELPER FUNCTIONS ***********************
 
 def _read_config(CITY) -> Dict[str, Dict[str, Any]]:
     with open(
         os.path.join(
-            '/home/demuzmp4/Nextcloud/scripts/wudapt/dynamic-lcz/config',
+            './config',
             f'{CITY.lower()}.yaml',
         ),
     ) as ymlfile:
         pm = yaml.load(ymlfile, Loader=yaml.FullLoader)
     return pm
 
+def _create_ee_folder(fn_ee_dir) -> None:
+
+    print("> Create EE folder if it does not already exists ...")
+    try:
+        os.system(f"earthengine create folder {fn_ee_dir}")
+    except Exception:
+        err = traceback.format_exc()
+        print(f"WARNING, unable to create EE folder: \n {err}")
+        pass
+
+    return
 
 def _convert_kmz2kml(up_dir, taName) -> str:
 
@@ -172,7 +165,7 @@ def _check_clean_ta(ifile: str):
             # iterate over valid LCZ layers
             for lczFolder in lczFolders:
 
-                #lczFolder = '2'
+                #lczFolder = '1'
                 print(lczFolder)
 
                 ## Read content per folder (layer)
@@ -223,12 +216,12 @@ def _check_clean_ta(ifile: str):
                     a.drop('Name', axis=1, inplace=True)
 
                 ## Put all layers together
-                df = df.append(a, ignore_index=True)
+                df = pd.concat([df,a])
 
 
             # convert multi part features to single part features
             # reset the index to get rid of the now multi part index
-            df = df.explode().reset_index(drop=True)
+            df = df.explode(index_parts=True).reset_index(drop=True)
 
             ## Again set Class to integers, info seems to be lost?
             df['Class'] = [int(i) for i in df['Class']]
@@ -269,6 +262,13 @@ def _add_geometry(df):
 # Set the info
 info = _read_config(CITY)
 
+# Set files and folders:
+fn_loc_dir = f"./data/{CITY}"
+fn_ee_dir = info['EE_IN_DIR']
+
+# Create the folder on Earth Engine to store assets
+_create_ee_folder(fn_ee_dir)
+
 # Initialize dataframe
 df_all = gpd.GeoDataFrame()
 
@@ -295,7 +295,7 @@ for year in list(info['TA'][TA_VERSION].keys()):
     df['City'] = CITY
     df['Year'] = year
 
-    df_all = df_all.append(df)
+    df_all = pd.concat([df_all, df])
 
 df_all['Class'] = [int(i) for i in df_all.Class]
 
