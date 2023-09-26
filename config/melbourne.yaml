@@ -15,7 +15,7 @@ JD_END: 366
 
 # ASSET INFO
 EXPORT_TO_ASSET: "False"
-EE_IN_DIR: "projects/WUDAPT/LCZ_L0/dynamic-lcz/input"
+EE_IN_DIR: "projects/ee-mdemuzere/assets/multitemp-lcz"
 EXPORT_SCALE: 30
 
 # LCZ mapping parameters
@@ -36,8 +36,10 @@ LCZ:
       '#6A6AFF',
   ]
 
-# Other
+# Confusion Matrix weights
 CM_WEIGHTS: './tables/LCZ_metric.csv'
+
+# Folder on your google drive
 GD_FOLDER: "EE"
 
 
