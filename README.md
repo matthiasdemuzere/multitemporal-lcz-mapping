@@ -1,6 +1,7 @@
 # Multi-temporal Local Climate Zone mapping
 
-- This is an experimental, no longer maintained or updated multi-temporal LCZ mapping procedure, that has first been tested over Canadian cities ([Demuzere et al., 2020](https://osf.io/h5tm6/)), and has been developed further Chinese mega-cities ([Cai et al., 2022](https://doi.org/10.1016/j.cities.2022.103988)).
+- This is an experimental, no longer maintained nor developed multi-temporal LCZ mapping procedure. 
+- This workflow was first tested over Canadian cities ([Demuzere et al., 2020](https://osf.io/h5tm6/)), and has been developed further for Chinese megacities ([Cai et al., 2022](https://doi.org/10.1016/j.cities.2022.103988)).
 - In contrast to the other LCZ mapping efforts over Europe ([Demuzere et al., 2019](http://doi.org/10.1371/journal.pone.0214474)), the USA ([Demuzere et al., 2020](http://doi.org/10.1038/s41597-020-00605-z)), and the world ([Demuzere et al., 2022](http://doi.org/10.5194/essd-14-3835-2022)), this work only uses input from the Landsat sensor. As such, the quality of such a landsat-only map might be inferior to one produced by the [LCZ-Generator](https://lcz-generator.rub.de/) ([Demuzere et al., 2021](http://doi.org/10.3389/fenvs.2021.637455)), which also has access to more recent Sentinel-1, 2 and other earth observation products.
 - No temporal filtering has been applied on the resulting LCZ maps. That means that LCZ labels might jump from one LCZ class to another in subsequent years, which might be artificial and due to the nature of the random forest classifier.
 
@@ -8,6 +9,7 @@
 ## Requirements
 - a working python environment: see below how to set this up.
 - an account on Google Earth Engine. You can sign up [here](https://earthengine.google.com/signup/). 
+- Prior to using the Earth Engine Python client library, you need to authenticate (verify your identity) and use the resultant credentials to initialize the Python client. See [here](https://developers.google.com/earth-engine/guides/python_install) for more info.
 - training area polygons representative for each year of interest. Ideally the TA sets across years share the same polygons (for areas that did not change over time), to increase consistency across the dynamic LCZ maps. Make sure to make the training area sets according to this template (https://www.wudapt.org/wp-content/uploads/2020/08/WUDAPT_L0_Training_template.kml) and these guidelines (https://www.wudapt.org/digitize-training-areas/)!
 
 ## LCZ mapping procedure
