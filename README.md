@@ -1,7 +1,6 @@
 # Multi-temporal Local Climate Zone mapping
 
-## General 
-- Keep in mind that this is still an experimental procedure. It has first been applied over Canadian cities ([Demuzere et al., 2020](https://osf.io/h5tm6/)), and has been developed further and tested over Chinese mega-cities ([Cai et al., 2022](https://doi.org/10.1016/j.cities.2022.103988)).
+- This is an experimental, no longer maintained or updated multi-temporal LCZ mapping procedure, that has first been tested over Canadian cities ([Demuzere et al., 2020](https://osf.io/h5tm6/)), and has been developed further Chinese mega-cities ([Cai et al., 2022](https://doi.org/10.1016/j.cities.2022.103988)).
 - In contrast to the other LCZ mapping efforts over Europe ([Demuzere et al., 2019](http://doi.org/10.1371/journal.pone.0214474)), the USA ([Demuzere et al., 2020](http://doi.org/10.1038/s41597-020-00605-z)), and the world ([Demuzere et al., 2022](http://doi.org/10.5194/essd-14-3835-2022)), this work only uses input from the Landsat sensor. As such, the quality of such a landsat-only map might be inferior to one produced by the [LCZ-Generator](https://lcz-generator.rub.de/) ([Demuzere et al., 2021](http://doi.org/10.3389/fenvs.2021.637455)), which also has access to more recent Sentinel-1, 2 and other earth observation products.
 - No temporal filtering has been applied on the resulting LCZ maps. That means that LCZ labels might jump from one LCZ class to another in subsequent years, which might be artificial and due to the nature of the random forest classifier.
 
