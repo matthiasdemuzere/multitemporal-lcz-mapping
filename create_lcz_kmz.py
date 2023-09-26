@@ -9,6 +9,7 @@ import os
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import xarray as xr
+import rioxarray as rxr
 import rasterio
 import argparse
 from argparse import RawTextHelpFormatter
@@ -29,6 +30,7 @@ parser.add_argument(type=str, dest='TA_VERSION',
                     default="v1",
                     )
 args = parser.parse_args()
+
 
 # Arguments to script
 CITY       = args.CITY
@@ -69,7 +71,7 @@ def make_kmz(info, CITY, TA_VERSION, BAND_TO_PLOT=1) -> None:
                 f"JDs{info['JD_START']}_{info['JD_END']}_" \
                 f"L7{info['ADD_L7']}.tif"
 
-        lczTif = xr.open_rasterio(os.path.join(
+        lczTif = rxr.open_rasterio(os.path.join(
             fn_loc_dir,
             "output",
             tif_file)
@@ -147,22 +149,24 @@ def make_kmz(info, CITY, TA_VERSION, BAND_TO_PLOT=1) -> None:
                 ),
             )
 
-    OFILE_KMZ = os.path.join(
-        fn_loc_dir,
-        'output',
-        tif_file.replace('.tif', '.kmz'),
-    )
-    with zipfile.ZipFile(OFILE_KMZ, 'w') as zf:
-        for f in contents:
-            zf.writestr(*f)
+        OFILE_KMZ = os.path.join(
+            fn_loc_dir,
+            'output',
+            tif_file.replace('.tif', '.kmz'),
+        )
+        with zipfile.ZipFile(OFILE_KMZ, 'w') as zf:
+            for f in contents:
+                zf.writestr(*f)
 
-    print(OFILE_KMZ)
+        print(OFILE_KMZ)
 
 ###############################################################################
 ##### __main__  scope
 ###############################################################################
 info = _read_config(CITY)
+
 # Set files and folders:
-fn_loc_dir = f"/home/demuzmp4/Nextcloud/data/wudapt/dynamic-lcz/{CITY}"
+fn_loc_dir = f"./data/{CITY}"
+
 make_kmz(info, CITY, TA_VERSION, BAND_TO_PLOT=1)
 ###############################################################################

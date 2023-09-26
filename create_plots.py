@@ -10,6 +10,7 @@ import matplotlib as mpl
 import seaborn as sns
 import xarray as xr
 import rasterio
+import rioxarray as rxr
 import argparse
 from argparse import RawTextHelpFormatter
 
@@ -332,7 +333,7 @@ def plot_lczmap_multiplot(info, CITY, TA_VERSION, BAND_TO_PLOT, DPI):
                    f"JDs{info['JD_START']}_{info['JD_END']}_" \
                    f"L7{info['ADD_L7']}.tif"
 
-        lczTif = xr.open_rasterio(os.path.join(
+        lczTif = rxr.open_rasterio(os.path.join(
             fn_loc_dir,
             "output",
             tif_file)
@@ -368,7 +369,7 @@ def plot_lczmap_multiplot(info, CITY, TA_VERSION, BAND_TO_PLOT, DPI):
                     f"JDs{info['JD_START']}_{info['JD_END']}_" \
                     f"L7{info['ADD_L7']}.tif"
 
-            lczTif = xr.open_rasterio(os.path.join(
+            lczTif = rxr.open_rasterio(os.path.join(
                 fn_loc_dir,
                 "output",
                 tif_file)

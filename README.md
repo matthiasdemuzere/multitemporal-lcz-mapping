@@ -130,26 +130,26 @@ All outputs are available in `output/`.
 
 * The outputs are similar as those provided by the LCZ Generator (see [here](https://lcz-generator.rub.de/submissions)). 
 * The FILENAME reflects the settings used in the LCZ map production:
-  * XX_: CM or IDs or LCZ (type of output, see below)
-  * CITYNAME_
-  * v1_: TA version (in case multiple iterations will be done)
-  * YEAR_
-  * CC_: Cloud Cover threshold
-  * ED_: Extra Days before and after relevant year
-  * JDs_: Julian days considered (0_366 = all year)
-  * L7True: Landsat 7 info is used prior to 2003.
+  * `XX_`: CM or IDs or LCZ (type of output, see below)
+  * `CITYNAME_`
+  * `v1_`: TA version (in case multiple iterations will be done)
+  * `YEAR_`
+  * `CC_`: Cloud Cover threshold
+  * `ED_`: Extra Days before and after relevant year
+  * `JDs`_: Julian days considered (0_366 = all year)
+  * `L7True`: Landsat 7 info is used prior to 2003.
   
 * Data output:
-  * IDs_FILENAME_LS_IDs.csv: The IDs of the Landsat images that were used to create the Landsat mosaics as input to the random forest classifier.
-  * CM_FILENAME.csv: Raw confusion matrix, can be ignored
-  * CM_FILENAME_oa_df.csv: Overall accuracies and F1 metrics per bootstrap. This is the data used to make the plot_OA_BOXPLOT.jpg
-  * LCZ_FILENAME.tif: Actual LCZ map, with two bands: "lcz" is raw map, "lczFilter" is Gaussian filtered map.
-  * LCZ_FILENAME.kmz: LCZ map ("lczFilter"), in kmz format, which can be opened in Google Earth.
+  * `IDs_FILENAME_LS_IDs.csv`: The IDs of the Landsat images that were used to create the Landsat mosaics as input to the random forest classifier.
+  * `CM_FILENAME.csv`: Raw confusion matrix
+  * `CM_FILENAME_oa_df.csv`: Overall accuracies and F1 metrics per bootstrap. This is the data used to make the plot_OA_BOXPLOT.jpg
+  * `LCZ_FILENAME.tif`: Actual LCZ map, with two bands: "lcz" is raw map, "lczFilter" is Gaussian filtered map.
+  * `LCZ_FILENAME.kmz`: LCZ map ("lczFilter"), in kmz format, which can be opened in Google Earth.
   
 * Figures:
-  * plot_TA_FREQ.jpg: stacked bar plot showing the number of TAs per class and year
-  * plot_OA_BOXPLOT.jpg: accuracy boxplots per year
-  * plot_LCZ_MAP.jpg: LCZ map (using lczFilter band) per year
+  * `plot_TA_FREQ.jpg`: stacked bar plot showing the number of TAs per class and year
+  * `plot_OA_BOXPLOT.jpg`: accuracy boxplots per year
+  * `plot_LCZ_MAP.jpg`: LCZ map (using lczFilter band) per year
 
 
 ## Relevant References
