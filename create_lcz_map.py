@@ -56,38 +56,52 @@ def _get_roi(info, TA_VERSION):
 
 
 def _mask_clouds(img):
-  # Bits 3 and 5 are cloud shadow and cloud, respectively.
-  cloudShadowBitMask = 1 << 3
-  cloudsBitMask = 1 << 5
+    # Masking: cloud (bit 3) and cloud shadow (bit 4)
+    cloud_bit = 1 << 3
+    shadow_bit = 1 << 4
+    qa = img.select("pixel_qa")
 
-  # Get the pixel QA band.
-  qa = img.select('pixel_qa')
+    # Keep only clear pixels
+    mask = qa.bitwiseAnd(cloud_bit).eq(0).And(
+        qa.bitwiseAnd(shadow_bit).eq(0)
+    )
+    masked = img.updateMask(mask)
 
-  # Both flags should be set to zero, indicating clear conditions.
-  mask = qa.bitwiseAnd(cloudShadowBitMask).eq(0) \
-      .And(qa.bitwiseAnd(cloudsBitMask).eq(0))
+    # Scale optical reflectance bands
+    optical_band_names = ['blue', 'green', 'red', 'nir', 'swir1', 'swir2']
+    optical_scaled = masked.select(optical_band_names)\
+        .multiply(0.0000275).add(-0.2)
 
-  # Return the masked image, scaled to reflectance, without the QA bands.
-  # .select("B[0-9]*")\
-  return img.updateMask(mask).divide(10000)\
-      .copyProperties(img, img.propertyNames())
+    # Scale thermal band if present
+    thermal_scaled = ee.Image(0)  # dummy image
+    if masked.bandNames().contains('tirs1'):
+        thermal_scaled = masked.select('tirs1')\
+            .multiply(0.00341802).add(149.0)
+
+    # Merge scaled bands back in (overwrite originals)
+    scaled = masked.addBands(optical_scaled, None, True)\
+                   .addBands(thermal_scaled.rename('tirs1'), None, True)
+
+    return scaled.copyProperties(img, img.propertyNames())
+
+
 
 ## Band names depending on sensor
 def _l8rename(img):
-    return img.select(['B2', 'B3', 'B4', 'B5', 'B6',
-                       'B7', 'B10', 'pixel_qa'],
+    return img.select(['SR_B2', 'SR_B3', 'SR_B4', 'SR_B5', 'SR_B6',
+                       'SR_B7', 'ST_B10', 'QA_PIXEL'],
                       ['blue', 'green', 'red', 'nir', 'swir1',
                        'swir2', 'tirs1', 'pixel_qa'])
 
 def _l5_7rename(img):
-    return img.select(['B1', 'B2', 'B3', 'B4', 'B5', 'B6',
-                       'B7', 'pixel_qa'],
+    return img.select(['SR_B1', 'SR_B2', 'SR_B3', 'SR_B4', 'SR_B5', 'ST_B6',
+                       'SR_B7', 'QA_PIXEL'],
                       ['blue', 'green', 'red', 'nir', 'swir1', 'tirs1',
                        'swir2', 'pixel_qa'])
 
 def _add_bci(img):
 
-    b = img.select(['blue', 'green', 'red', 'nir', 'swir1', 'swir2']).divide(10000);
+    b = img.select(['blue', 'green', 'red', 'nir', 'swir1', 'swir2']);
 
     ## Coefficients from Table S1 in De Vries et al., 2016
     brightness_= ee.Image([0.2043, 0.4158, 0.5524, 0.5741, 0.3124, 0.2303]);
@@ -139,10 +153,10 @@ def _get_all_ls(info, CITY, TA_VERSION, YEAR):
     end_date   = ee.Date(str(YEAR) + '-12-31')
 
     # Get Landsat collections
-    _ls5 = ee.ImageCollection('LANDSAT/LT05/C01/T1_SR')
-    _ls7 = ee.ImageCollection('LANDSAT/LE07/C01/T1_SR')\
+    _ls5 = ee.ImageCollection('LANDSAT/LT05/C02/T1_L2')
+    _ls7 = ee.ImageCollection('LANDSAT/LE07/C02/T1_L2')\
             .filterDate('1999-01-01','2002-12-31') # Avoid scan line error
-    _ls8 = ee.ImageCollection('LANDSAT/LC08/C01/T1_SR')
+    _ls8 = ee.ImageCollection('LANDSAT/LC08/C02/T1_L2')
 
     # Merge collections
     l5 = _ls5.map(_l5_7rename)
